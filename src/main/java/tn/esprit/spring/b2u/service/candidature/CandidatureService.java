@@ -2,6 +2,7 @@ package tn.esprit.spring.b2u.service.candidature;
 
 import tn.esprit.spring.b2u.DTO.CandidatureDTO;
 import tn.esprit.spring.b2u.entity.Candidature;
+import tn.esprit.spring.b2u.exception.ResourceNotFoundException;
 import tn.esprit.spring.b2u.repository.CandidatureRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ public class CandidatureService {
     @Autowired
     private CandidatureRepo candidatureRepository;
 
+    // ===== Convert Entity <-> DTO =====
     private CandidatureDTO convertToDTO(Candidature c) {
         CandidatureDTO dto = new CandidatureDTO();
         dto.setIdCandidature(c.getIdCandidature());
@@ -55,27 +57,57 @@ public class CandidatureService {
         return c;
     }
 
+    // ===== GET ALL =====
     public List<CandidatureDTO> getAllCandidatures() {
-        return candidatureRepository.findAll()
-                .stream()
+        List<Candidature> list = candidatureRepository.findAll();
+        if (list.isEmpty()) {
+            throw new ResourceNotFoundException("Aucune candidature trouvée");
+        }
+        return list.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 
+    // ===== CREATE =====
     public CandidatureDTO createCandidature(CandidatureDTO dto) {
         Candidature c = convertToEntity(dto);
         Candidature saved = candidatureRepository.save(c);
+        System.out.println("✅ Candidature de " + saved.getNomCandidat() + " créée avec succès");
         return convertToDTO(saved);
     }
 
+    // ===== UPDATE =====
     public CandidatureDTO updateCandidature(String id, CandidatureDTO dto) {
-        Candidature c = convertToEntity(dto);
-        c.setIdCandidature(id);
-        Candidature updated = candidatureRepository.save(c);
+        Candidature existing = candidatureRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Candidature avec id " + id + " non trouvée"));
+
+        // Mettre à jour les champs
+        existing.setNomCandidat(dto.getNomCandidat());
+        existing.setPrenomCandidat(dto.getPrenomCandidat());
+        existing.setEmail(dto.getEmail());
+        existing.setTelephone(dto.getTelephone());
+        existing.setAdresse(dto.getAdresse());
+        existing.setDateNaissance(dto.getDateNaissance());
+        existing.setFormationActuelle(dto.getFormationActuelle());
+        existing.setSpecialite(dto.getSpecialite());
+        existing.setAnneeExperience(dto.getAnneeExperience());
+        existing.setDateCandidature(dto.getDateCandidature());
+        existing.setStatutCandidature(dto.getStatutCandidature());
+        existing.setCompetences(dto.getCompetences());
+        existing.setCvLien(dto.getCvLien());
+        existing.setLettreMotivation(dto.getLettreMotivation());
+
+        Candidature updated = candidatureRepository.save(existing);
+        System.out.println(" Candidature avec id " + id + " mise à jour avec succès");
         return convertToDTO(updated);
     }
 
+    // ===== DELETE =====
     public void deleteCandidature(String id) {
+        if (!candidatureRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Candidature avec id " + id + " non trouvée");
+        }
         candidatureRepository.deleteById(id);
+        System.out.println(" Candidature avec id " + id + " supprimée avec succès");
     }
 }

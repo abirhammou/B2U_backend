@@ -1,8 +1,8 @@
 package tn.esprit.spring.b2u.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import tn.esprit.spring.b2u.service.candidature.CandidatureService;
 import tn.esprit.spring.b2u.DTO.CandidatureDTO;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
@@ -13,8 +13,12 @@ import java.util.List;
 @CrossOrigin(origins = "http://localhost:4200")
 public class CandidatureController {
 
-    @Autowired
-    private CandidatureService candidatureService;
+    private final CandidatureService candidatureService;
+
+    // ✅ injection propre via constructeur
+    public CandidatureController(CandidatureService candidatureService) {
+        this.candidatureService = candidatureService;
+    }
 
     @GetMapping
     public List<CandidatureDTO> getAllCandidatures() {
@@ -32,8 +36,9 @@ public class CandidatureController {
         return candidatureService.updateCandidature(id, dto);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
-    public void deleteCandidature(@PathVariable String id) {
+    public void delete(@PathVariable String id) {
         candidatureService.deleteCandidature(id);
     }
 }
