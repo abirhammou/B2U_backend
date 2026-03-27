@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    // ================== DUPLICATE ==================
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<Map<String, Object>> handleDuplicate(DuplicateResourceException ex,
                                                                HttpServletRequest request) {
-
         Map<String, Object> body = new HashMap<>();
         body.put("status", HttpStatus.CONFLICT.value());
         body.put("error", "Conflict");
@@ -27,10 +27,10 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.CONFLICT);
     }
 
+    // ================== NOT FOUND ==================
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(ResourceNotFoundException ex,
                                                               HttpServletRequest request) {
-
         Map<String, Object> body = new HashMap<>();
         body.put("status", HttpStatus.NOT_FOUND.value());
         body.put("error", "Not Found");
@@ -40,6 +40,7 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
     }
 
+    // ================== VALIDATION DTO ==================
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidationExceptions(
             MethodArgumentNotValidException ex,
@@ -51,10 +52,10 @@ public class GlobalExceptionHandler {
                 .stream()
                 .collect(Collectors.toMap(
                         error -> error.getField(),
-                        error -> error.getDefaultMessage()
+                        error -> error.getDefaultMessage(),
+                        (existing, replacement) -> existing // si doublon, garder le premier
                 ));
 
-        // Réponse JSON propre
         Map<String, Object> body = new HashMap<>();
         body.put("status", HttpStatus.BAD_REQUEST.value());
         body.put("error", "Bad Request");
@@ -63,5 +64,35 @@ public class GlobalExceptionHandler {
         body.put("path", request.getRequestURI());
 
         return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    // ================== RUNTIME (login/register) ==================
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(
+            RuntimeException ex,
+            HttpServletRequest request) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("error", "Bad Request");
+        body.put("message", ex.getMessage());
+        body.put("path", request.getRequestURI());
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+    }
+
+    // ================== AUTRES ERREURS ==================
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleOtherExceptions(
+            Exception ex,
+            HttpServletRequest request) {
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        body.put("error", "Internal Server Error");
+        body.put("message", ex.getMessage());
+        body.put("path", request.getRequestURI());
+
+        return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
