@@ -12,6 +12,7 @@ tn\esprit\spring\b2u\controller\EvaluationController.class
 tn\esprit\spring\b2u\controller\ProjetController.class
 tn\esprit\spring\b2u\repository\EquipeRepo.class
 tn\esprit\spring\b2u\DTO\EtudiantDTO.class
+tn\esprit\spring\b2u\security\JwtFilter.class
 tn\esprit\spring\b2u\service\entreprise\IEntrepriseService.class
 tn\esprit\spring\b2u\service\projet\IProjetService.class
 tn\esprit\spring\b2u\DTO\EntretienVirtuelDTO.class
@@ -28,12 +29,12 @@ tn\esprit\spring\b2u\security\SecurityConfig.class
 tn\esprit\spring\b2u\entity\Projet.class
 tn\esprit\spring\b2u\B2UApplication.class
 tn\esprit\spring\b2u\service\entretienVirtuel\EntretienVirtuelService.class
-tn\esprit\spring\b2u\repository\ProjetRepo.class
 tn\esprit\spring\b2u\DTO\EntrepriseDTO.class
 tn\esprit\spring\b2u\exception\GlobalExceptionHandler.class
 tn\esprit\spring\b2u\controller\EquipeController.class
 tn\esprit\spring\b2u\repository\EtudiantRepo.class
 tn\esprit\spring\b2u\controller\EtudiantController.class
+tn\esprit\spring\b2u\repository\ProjetRepository.class
 tn\esprit\spring\b2u\service\entreprise\EntrepriseService.class
 tn\esprit\spring\b2u\entity\Equipe.class
 tn\esprit\spring\b2u\exception\DuplicateResourceException.class
@@ -45,6 +46,7 @@ tn\esprit\spring\b2u\entity\EntretienVirtuel.class
 tn\esprit\spring\b2u\entity\Etudiant.class
 tn\esprit\spring\b2u\controller\AuthController.class
 tn\esprit\spring\b2u\DTO\ProjetDTO.class
+tn\esprit\spring\b2u\DTO\RegisterRequest.class
 tn\esprit\spring\b2u\DTO\CandidatureDTO.class
 tn\esprit\spring\b2u\service\AuthService.class
 tn\esprit\spring\b2u\repository\EntretienVirtuelRepo.class
