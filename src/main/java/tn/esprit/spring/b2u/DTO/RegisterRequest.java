@@ -4,9 +4,13 @@ import jakarta.validation.constraints.*;
 
 public class RegisterRequest {
 
-    @NotBlank(message = "Le username est obligatoire")
-    @Size(min = 3, message = "Le username doit contenir au moins 3 caractères")
-    private String username;
+    @NotBlank(message = "Le prénom est obligatoire")
+    @Size(min = 2, message = "Le prénom doit contenir au moins 2 caractères")
+    private String firstName;
+
+    @NotBlank(message = "Le nom est obligatoire")
+    @Size(min = 2, message = "Le nom doit contenir au moins 2 caractères")
+    private String lastName;
 
     @Email(message = "Email invalide")
     @NotBlank(message = "L'email est obligatoire")
@@ -21,12 +25,22 @@ public class RegisterRequest {
 
     private String role;
 
-    public String getUsername() {
-        return username;
+    // Getters & Setters
+
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setUsername(String username) {
-        this.username = username;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public String getEmail() {

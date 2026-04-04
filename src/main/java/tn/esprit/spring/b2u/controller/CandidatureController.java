@@ -41,4 +41,10 @@ public class CandidatureController {
     public void delete(@PathVariable String id) {
         candidatureService.deleteCandidature(id);
     }
+
+    @GetMapping("/my")
+    public List<CandidatureDTO> getMyCandidatures(@RequestParam String email) {
+        return candidatureService.getCandidaturesByEmail(email);
+    }
+
 }
