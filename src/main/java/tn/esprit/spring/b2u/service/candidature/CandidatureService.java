@@ -25,7 +25,6 @@ public class CandidatureService {
         dto.setEmail(c.getEmail());
         dto.setTelephone(c.getTelephone());
         dto.setAdresse(c.getAdresse());
-        dto.setDateNaissance(c.getDateNaissance());
         dto.setFormationActuelle(c.getFormationActuelle());
         dto.setSpecialite(c.getSpecialite());
         dto.setAnneeExperience(c.getAnneeExperience());
@@ -36,6 +35,12 @@ public class CandidatureService {
         dto.setLettreMotivation(c.getLettreMotivation());
         return dto;
     }
+    public List<CandidatureDTO> getCandidaturesByEmail(String email) {
+        return candidatureRepository.findByEmail(email)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
 
     private Candidature convertToEntity(CandidatureDTO dto) {
         Candidature c = new Candidature();
@@ -45,7 +50,6 @@ public class CandidatureService {
         c.setEmail(dto.getEmail());
         c.setTelephone(dto.getTelephone());
         c.setAdresse(dto.getAdresse());
-        c.setDateNaissance(dto.getDateNaissance());
         c.setFormationActuelle(dto.getFormationActuelle());
         c.setSpecialite(dto.getSpecialite());
         c.setAnneeExperience(dto.getAnneeExperience());
@@ -59,14 +63,12 @@ public class CandidatureService {
 
     // ===== GET ALL =====
     public List<CandidatureDTO> getAllCandidatures() {
-        List<Candidature> list = candidatureRepository.findAll();
-        if (list.isEmpty()) {
-            throw new ResourceNotFoundException("Aucune candidature trouvée");
-        }
-        return list.stream()
+        return candidatureRepository.findAll()
+                .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+
 
     // ===== CREATE =====
     public CandidatureDTO createCandidature(CandidatureDTO dto) {
@@ -87,7 +89,6 @@ public class CandidatureService {
         existing.setEmail(dto.getEmail());
         existing.setTelephone(dto.getTelephone());
         existing.setAdresse(dto.getAdresse());
-        existing.setDateNaissance(dto.getDateNaissance());
         existing.setFormationActuelle(dto.getFormationActuelle());
         existing.setSpecialite(dto.getSpecialite());
         existing.setAnneeExperience(dto.getAnneeExperience());
@@ -110,4 +111,5 @@ public class CandidatureService {
         candidatureRepository.deleteById(id);
         System.out.println(" Candidature avec id " + id + " supprimée avec succès");
     }
+
 }

@@ -23,8 +23,6 @@ public class CandidatureDTO {
 
     private String adresse;
 
-    @Past(message = "La date de naissance doit être passée")
-    private LocalDate dateNaissance;
 
     private String formationActuelle;
     private String specialite;
@@ -64,8 +62,6 @@ public class CandidatureDTO {
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
 
-    public LocalDate getDateNaissance() { return dateNaissance; }
-    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
     public String getFormationActuelle() { return formationActuelle; }
     public void setFormationActuelle(String formationActuelle) { this.formationActuelle = formationActuelle; }

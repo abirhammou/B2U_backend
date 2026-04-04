@@ -16,5 +16,21 @@ public class EquipeDTO {
     @Size(min = 5, max = 200, message = "La description doit contenir entre 5 et 200 caractères")
     private String descriptionProfil;
 
+    public EquipeDTO() {}
 
+    public String getNomMembresEquipe() {
+        return nomMembresEquipe;
+    }
+
+    public void setNomMembresEquipe(String nomMembresEquipe) {
+        this.nomMembresEquipe = nomMembresEquipe;
+    }
+
+    public String getDescriptionProfil() {
+        return descriptionProfil;
+    }
+
+    public void setDescriptionProfil(String descriptionProfil) {
+        this.descriptionProfil = descriptionProfil;
+    }
 }

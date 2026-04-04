@@ -3,10 +3,14 @@ package tn.esprit.spring.b2u.service;
 import tn.esprit.spring.b2u.entity.User;
 import tn.esprit.spring.b2u.repository.UserRepository;
 import tn.esprit.spring.b2u.security.JwtUtil;
+import tn.esprit.spring.b2u.DTO.RegisterRequest;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import tn.esprit.spring.b2u.DTO.RegisterRequest;
+
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 public class AuthService {
 
@@ -22,19 +26,26 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
+    // ================= REGISTER =================
     public String register(RegisterRequest request) {
 
-        // 🔴 validation username
-        if (request.getUsername() == null || request.getUsername().length() < 3) {
-            throw new RuntimeException("Le username doit contenir au moins 3 caractères");
+        // 🔴 Validation prénom
+        if (request.getFirstName() == null || request.getFirstName().length() < 2) {
+            throw new RuntimeException("Le prénom est invalide");
         }
 
-        // 🔴 validation email
-        if (request.getEmail() == null || !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+        // 🔴 Validation nom
+        if (request.getLastName() == null || request.getLastName().length() < 2) {
+            throw new RuntimeException("Le nom est invalide");
+        }
+
+        // 🔴 Validation email
+        if (request.getEmail() == null ||
+                !request.getEmail().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
             throw new RuntimeException("Email invalide");
         }
 
-        // 🔴 validation password
+        // 🔴 Validation password
         if (request.getPassword() == null ||
                 !request.getPassword().matches("^(?=.*[A-Z])(?=.*\\d).{8,}$")) {
 
@@ -43,42 +54,47 @@ public class AuthService {
             );
         }
 
-        // 🔴 vérifier email existe déjà
+        // 🔴 Email déjà utilisé
         if (userRepo.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Cet email est déjà utilisé");
         }
 
-        // 🔴 vérifier username existe déjà
-        if (userRepo.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Ce username est déjà utilisé");
-        }
-
-        // 🔁 conversion DTO → Entity
+        // 🔁 Création User
         User user = new User();
-        user.setUsername(request.getUsername());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        // rôle
-        if ("ADMIN".equals(request.getRole())) {
-            user.setRole("ROLE_ADMIN");
-        } else {
-            user.setRole("ROLE_USER");
+        // 🔐 rôle
+        switch (request.getRole() != null ? request.getRole().toLowerCase() : "") {
+            case "admin"   -> user.setRole("ROLE_ADMIN");
+            case "company" -> user.setRole("ROLE_COMPANY");
+            default        -> user.setRole("ROLE_STUDENT");
         }
+
 
         userRepo.save(user);
 
         return "Utilisateur créé avec succès";
     }
-    public String login(String username, String password) {
 
-        User user = userRepo.findByUsername(username)
+    // ================= LOGIN =================
+    public Map<String, Object> login(String email, String password) {
+        User user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (!passwordEncoder.matches(password, user.getPassword())) {
+        if (!passwordEncoder.matches(password, user.getPassword()))
             throw new RuntimeException("Invalid password");
-        }
 
-        return jwtUtil.generateToken(username);
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", jwtUtil.generateToken(email, user.getRole()));
+        response.put("id", user.getId());
+        response.put("firstName", user.getFirstName());
+        response.put("lastName", user.getLastName());
+        response.put("email", user.getEmail());
+        response.put("role", user.getRole());
+        return response;
     }
+
 }

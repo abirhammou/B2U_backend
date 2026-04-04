@@ -17,18 +17,18 @@ public class Candidature {
     private String email;
     private String telephone;
     private String adresse;
-    private LocalDate dateNaissance;
 
-    private String formationActuelle;  // par ex: Licence, Master
-    private String specialite;         // par ex: Informatique, Marketing
-    private int anneeExperience;       // années d'expérience si déjà travaillé
+
+    private String formationActuelle;
+    private String specialite;
+    private int anneeExperience;
 
     private LocalDate dateCandidature;
-    private String statutCandidature;  // Ex: "En cours", "Acceptée", "Refusée"
+    private String statutCandidature;
 
-    private List<String> competences;  // technologies ou compétences
-    private String cvLien;              // lien vers le CV
-    private String lettreMotivation;    // texte ou lien
+    private List<String> competences;
+    private String cvLien;
+    private String lettreMotivation;
 
     public Candidature() {}
 
@@ -51,8 +51,6 @@ public class Candidature {
     public String getAdresse() { return adresse; }
     public void setAdresse(String adresse) { this.adresse = adresse; }
 
-    public LocalDate getDateNaissance() { return dateNaissance; }
-    public void setDateNaissance(LocalDate dateNaissance) { this.dateNaissance = dateNaissance; }
 
     public String getFormationActuelle() { return formationActuelle; }
     public void setFormationActuelle(String formationActuelle) { this.formationActuelle = formationActuelle; }
