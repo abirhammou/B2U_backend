@@ -4,6 +4,7 @@ import tn.esprit.spring.b2u.DTO.EntrepriseDTO;
 import tn.esprit.spring.b2u.entity.Entreprise;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IEntrepriseService {
@@ -13,4 +14,7 @@ public interface IEntrepriseService {
     void createEnterprise(EntrepriseDTO dto);
     Entreprise updateEnterprise(String id, EntrepriseDTO dto);
     void deleteEnterprise(String id);
+
+    long getTotalCompaniesCount();
+    Map<String, Long> getCountBySector();
 }

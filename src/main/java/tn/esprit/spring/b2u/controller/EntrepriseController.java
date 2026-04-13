@@ -19,6 +19,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/entreprise")
+//@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Entreprise", description = "Endpoints for managing enterprises")
 public class EntrepriseController {
@@ -84,5 +85,19 @@ public class EntrepriseController {
         response.put("message", "Entreprise deleted successfully");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/stats/total")
+    @Operation(summary = "Get total number of companies")
+    public ResponseEntity<Map<String, Long>> getTotalCompaniesCount() {
+        Map<String, Long> response = new HashMap<>();
+        response.put("total", enterpriseService.getTotalCompaniesCount());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/stats/by-sector")
+    @Operation(summary = "Get number of companies per sector")
+    public ResponseEntity<Map<String, Long>> getCountBySector() {
+        return ResponseEntity.ok(enterpriseService.getCountBySector());
     }
 }
