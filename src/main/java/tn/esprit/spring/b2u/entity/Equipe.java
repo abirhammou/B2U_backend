@@ -25,7 +25,7 @@ public class Equipe {
     String descriptionProfil;
 
 
-
+    String entrepriseId;
 
 
     // @JsonIgnore

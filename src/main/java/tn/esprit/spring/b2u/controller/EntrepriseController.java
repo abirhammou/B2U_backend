@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.b2u.DTO.EntrepriseDTO;
 import tn.esprit.spring.b2u.entity.Entreprise;
+import tn.esprit.spring.b2u.entity.Equipe;
 import tn.esprit.spring.b2u.service.entreprise.IEntrepriseService;
+import tn.esprit.spring.b2u.service.equipe.EquipeService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,7 @@ import java.util.Map;
 public class EntrepriseController {
 
     private final IEntrepriseService enterpriseService;
+    private final EquipeService equipeService;
 
     @GetMapping("/getAll")
     @Operation(summary = "Get all enterprises", description = "Returns a list of all enterprises")
@@ -99,5 +102,10 @@ public class EntrepriseController {
     @Operation(summary = "Get number of companies per sector")
     public ResponseEntity<Map<String, Long>> getCountBySector() {
         return ResponseEntity.ok(enterpriseService.getCountBySector());
+    }
+
+    @GetMapping("/{id}/equipes")
+    public List<Equipe> getEquipesByEntreprise(@PathVariable String id) {
+        return equipeService.getEquipesByEntreprise(id);
     }
 }

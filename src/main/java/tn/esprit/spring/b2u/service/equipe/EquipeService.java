@@ -46,7 +46,9 @@ public class EquipeService implements IEquipeService {
 
 
 
-
+    public List<Equipe> getEquipesByEntreprise(String entrepriseId) {
+        return equipeRepo.findByEntrepriseId(entrepriseId);
+    }
 
 
 }
