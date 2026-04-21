@@ -4,9 +4,13 @@ import tn.esprit.spring.b2u.DTO.CandidatureDTO;
 import tn.esprit.spring.b2u.entity.Candidature;
 import tn.esprit.spring.b2u.exception.ResourceNotFoundException;
 import tn.esprit.spring.b2u.repository.CandidatureRepo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,7 +20,7 @@ public class CandidatureService {
     @Autowired
     private CandidatureRepo candidatureRepository;
 
-    // ===== Convert Entity <-> DTO =====
+    // ===== Convert Entity -> DTO =====
     private CandidatureDTO convertToDTO(Candidature c) {
         CandidatureDTO dto = new CandidatureDTO();
         dto.setIdCandidature(c.getIdCandidature());
@@ -35,13 +39,7 @@ public class CandidatureService {
         dto.setLettreMotivation(c.getLettreMotivation());
         return dto;
     }
-    public List<CandidatureDTO> getCandidaturesByEmail(String email) {
-        return candidatureRepository.findByEmail(email)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
-
+    // ===== Convert DTO -> Entity =====
     private Candidature convertToEntity(CandidatureDTO dto) {
         Candidature c = new Candidature();
         c.setIdCandidature(dto.getIdCandidature());
@@ -56,9 +54,15 @@ public class CandidatureService {
         c.setDateCandidature(dto.getDateCandidature());
         c.setStatutCandidature(dto.getStatutCandidature());
         c.setCompetences(dto.getCompetences());
-        c.setCvLien(dto.getCvLien());
-        c.setLettreMotivation(dto.getLettreMotivation());
         return c;
+    }
+
+    // ===== GET BY EMAIL =====
+    public List<CandidatureDTO> getCandidaturesByEmail(String email) {
+        return candidatureRepository.findByEmail(email)
+                .stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     // ===== GET ALL =====
@@ -69,21 +73,70 @@ public class CandidatureService {
                 .collect(Collectors.toList());
     }
 
+    // ===== CREATE WITH PDF =====
+    // ===== CREATE WITH PDF =====
+    public CandidatureDTO createCandidature(CandidatureDTO dto,
+                                            MultipartFile cv,
+                                            MultipartFile lettre) {
 
-    // ===== CREATE =====
-    public CandidatureDTO createCandidature(CandidatureDTO dto) {
-        Candidature c = convertToEntity(dto);
-        Candidature saved = candidatureRepository.save(c);
-        System.out.println("✅ Candidature de " + saved.getNomCandidat() + " créée avec succès");
-        return convertToDTO(saved);
+        try {
+            // ✅ Vérification PDF (garde ton code existant)
+            if (cv == null || (!cv.getContentType().equals("application/pdf") && !cv.getContentType().equals("application/octet-stream"))) {
+                throw new RuntimeException("Le CV doit être un fichier PDF");
+            }
+
+            if (lettre == null || (!lettre.getContentType().equals("application/pdf") && !lettre.getContentType().equals("application/octet-stream"))) {
+                throw new RuntimeException("La lettre de motivation doit être un PDF");
+            }
+
+            // ✅ CORRECTION : Chemin absolu vers le dossier uploads à la racine du projet
+            String uploadDir = System.getProperty("user.dir") + "/uploads/";
+
+            // ✅ Créer dossier uploads s'il n'existe pas
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                boolean created = directory.mkdirs();
+                System.out.println("Dossier uploads créé: " + created + " à " + uploadDir);
+            }
+
+            // ✅ Générer noms uniques
+            String cvFileName = System.currentTimeMillis() + "_" + cv.getOriginalFilename();
+            String lettreFileName = System.currentTimeMillis() + "_" + lettre.getOriginalFilename();
+
+            // ✅ Chemins complets
+            String cvPath = uploadDir + cvFileName;
+            String lettrePath = uploadDir + lettreFileName;
+
+            System.out.println("Sauvegarde CV dans: " + cvPath);
+            System.out.println("Sauvegarde Lettre dans: " + lettrePath);
+
+            // ✅ Sauvegarde fichiers
+            cv.transferTo(new File(cvPath));
+            lettre.transferTo(new File(lettrePath));
+
+            // ✅ Sauvegarde DB (garde les chemins relatifs pour la base)
+            Candidature c = convertToEntity(dto);
+            c.setCvLien("uploads/" + cvFileName);  // Chemin relatif pour la BD
+            c.setLettreMotivation("uploads/" + lettreFileName);
+
+            Candidature saved = candidatureRepository.save(c);
+
+            System.out.println("✅ Candidature créée avec fichiers PDF");
+
+            return convertToDTO(saved);
+
+        } catch (IOException e) {
+            e.printStackTrace();  // Ajoute ceci pour voir l'erreur complète
+            throw new RuntimeException("Erreur lors de l'upload des fichiers: " + e.getMessage(), e);
+        }
     }
-
     // ===== UPDATE =====
     public CandidatureDTO updateCandidature(String id, CandidatureDTO dto) {
-        Candidature existing = candidatureRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Candidature avec id " + id + " non trouvée"));
 
-        // Mettre à jour les champs
+        Candidature existing = candidatureRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Candidature avec id " + id + " non trouvée"));
+
         existing.setNomCandidat(dto.getNomCandidat());
         existing.setPrenomCandidat(dto.getPrenomCandidat());
         existing.setEmail(dto.getEmail());
@@ -95,11 +148,11 @@ public class CandidatureService {
         existing.setDateCandidature(dto.getDateCandidature());
         existing.setStatutCandidature(dto.getStatutCandidature());
         existing.setCompetences(dto.getCompetences());
-        existing.setCvLien(dto.getCvLien());
-        existing.setLettreMotivation(dto.getLettreMotivation());
 
         Candidature updated = candidatureRepository.save(existing);
-        System.out.println(" Candidature avec id " + id + " mise à jour avec succès");
+
+        System.out.println(" Candidature mise à jour");
+
         return convertToDTO(updated);
     }
 
@@ -109,7 +162,6 @@ public class CandidatureService {
             throw new ResourceNotFoundException("Candidature avec id " + id + " non trouvée");
         }
         candidatureRepository.deleteById(id);
-        System.out.println(" Candidature avec id " + id + " supprimée avec succès");
+        System.out.println(" Candidature supprimée");
     }
-
 }
