@@ -8,8 +8,11 @@ import tn.esprit.spring.b2u.exception.DuplicateResourceException;
 import tn.esprit.spring.b2u.exception.ResourceNotFoundException;
 import tn.esprit.spring.b2u.repository.EntrepriseRepo;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -76,5 +79,21 @@ public class EntrepriseService implements IEntrepriseService{
     @Override
     public void deleteEnterprise(String id) {
         enterpriseRepository.deleteById(id);
+    }
+
+    @Override
+    public long getTotalCompaniesCount() {
+        return enterpriseRepository.count();
+    }
+
+    @Override
+    public Map<String, Long> getCountBySector() {
+        return enterpriseRepository.findAll()
+                .stream()
+                .filter(entreprise -> entreprise.getSector() != null) // ignore null sectors
+                .collect(Collectors.groupingBy(
+                        Entreprise::getSector,
+                        Collectors.counting()
+                ));
     }
 }

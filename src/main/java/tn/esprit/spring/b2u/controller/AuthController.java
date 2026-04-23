@@ -10,6 +10,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
+@CrossOrigin(origins = "http://localhost:4200")
 public class AuthController {
 
     private final AuthService authService;
@@ -24,13 +25,9 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, String> login(@RequestBody Map<String, String> req) {
-
-        String token = authService.login(
-                req.get("username"),
-                req.get("password")
-        );
-
-        return Map.of("token", token);
+    public Map<String, Object> login(@RequestBody Map<String, String> req) {
+        Map<String, Object> result = authService.login(req.get("email"), req.get("password"));
+        return result;
     }
+
 }

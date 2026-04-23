@@ -22,10 +22,33 @@ public class Projet {
     private String description;
     private String companyId;
     private String companyName;
-    private List<String> requiredSkills;
-    private int teamSize;
+    private List<String> technologies;  // ← Changé de requiredSkills à technologies
+    private List<String> requiredSkills; // Gardé pour compatibilité    private int teamSize;
     private Date deadline;
     private String status;
     private int applicantsCount;
     private Date createdAt;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public List<String> getAllRequiredSkills() {
+        if (technologies != null && !technologies.isEmpty()) {
+            return technologies;
+        }
+        return requiredSkills != null ? requiredSkills : List.of();
+    }
 }

@@ -11,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.b2u.DTO.EntrepriseDTO;
 import tn.esprit.spring.b2u.entity.Entreprise;
+import tn.esprit.spring.b2u.entity.Equipe;
 import tn.esprit.spring.b2u.service.entreprise.IEntrepriseService;
+import tn.esprit.spring.b2u.service.equipe.EquipeService;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,11 +21,13 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/entreprise")
+//@CrossOrigin(origins = "http://localhost:4200")
 @RequiredArgsConstructor
 @Tag(name = "Entreprise", description = "Endpoints for managing enterprises")
 public class EntrepriseController {
 
     private final IEntrepriseService enterpriseService;
+    private final EquipeService equipeService;
 
     @GetMapping("/getAll")
     @Operation(summary = "Get all enterprises", description = "Returns a list of all enterprises")
@@ -84,5 +88,24 @@ public class EntrepriseController {
         response.put("message", "Entreprise deleted successfully");
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/stats/total")
+    @Operation(summary = "Get total number of companies")
+    public ResponseEntity<Map<String, Long>> getTotalCompaniesCount() {
+        Map<String, Long> response = new HashMap<>();
+        response.put("total", enterpriseService.getTotalCompaniesCount());
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/stats/by-sector")
+    @Operation(summary = "Get number of companies per sector")
+    public ResponseEntity<Map<String, Long>> getCountBySector() {
+        return ResponseEntity.ok(enterpriseService.getCountBySector());
+    }
+
+    @GetMapping("/{id}/equipes")
+    public List<Equipe> getEquipesByEntreprise(@PathVariable String id) {
+        return equipeService.getEquipesByEntreprise(id);
     }
 }
