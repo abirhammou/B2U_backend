@@ -6,8 +6,14 @@ import tn.esprit.spring.b2u.service.candidature.CandidatureService;
 import tn.esprit.spring.b2u.DTO.CandidatureDTO;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
+import jakarta.validation.Valid;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/candidatures")
@@ -15,10 +21,14 @@ import java.util.List;
 public class CandidatureController {
 
     private final CandidatureService candidatureService;
+    private final ObjectMapper objectMapper;
 
-    // ✅ injection propre via constructeur
     public CandidatureController(CandidatureService candidatureService) {
         this.candidatureService = candidatureService;
+        this.objectMapper = new ObjectMapper();
+        // Register JavaTimeModule to handle LocalDate
+        this.objectMapper.registerModule(new JavaTimeModule());
+        this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
     @GetMapping
@@ -26,48 +36,59 @@ public class CandidatureController {
         return candidatureService.getAllCandidatures();
     }
 
-    @PostMapping(consumes = "multipart/form-data")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public CandidatureDTO createCandidature(
-            @RequestPart("data") CandidatureDTO dto,
-            @RequestPart("cv") MultipartFile cv,
-            @RequestPart("lettre") MultipartFile lettre
-    ) {
-        // 🔍 LOGS DE DEBUG
-        System.out.println("========== DÉBUT REQUÊTE ==========");
-        System.out.println("DTO reçu: " + dto);
-        System.out.println("Email: " + dto.getEmail());
-        System.out.println("CV reçu: " + cv.getOriginalFilename());
-        System.out.println("CV Content-Type: " + cv.getContentType());
-        System.out.println("CV size: " + cv.getSize() + " bytes");
-        System.out.println("Lettre reçue: " + lettre.getOriginalFilename());
-        System.out.println("Lettre Content-Type: " + lettre.getContentType());
-        System.out.println("Lettre size: " + lettre.getSize() + " bytes");
-        System.out.println("===================================");
+            @RequestParam("data") String dtoJson,
+            @RequestParam("cv") MultipartFile cv,
+            @RequestParam("lettre") MultipartFile lettre,
+            @RequestParam String projectId
+    ) throws IOException {
 
-        return candidatureService.createCandidature(dto, cv, lettre);
-    }
-    @PostMapping("/test-upload")
-    public String test(@RequestParam String name) {
-        System.out.println("NAME = " + name);
-        return "OK " + name;
+        // ✅ Get bytes from MultipartFile
+        byte[] cvBytes = cv.getBytes();
+        byte[] lettreBytes = lettre.getBytes();
 
+        // Parse JSON to DTO
+        CandidatureDTO dto = objectMapper.readValue(dtoJson, CandidatureDTO.class);
+
+        // Pass bytes to service
+        return candidatureService.createCandidature(dto, cvBytes, lettreBytes, projectId);
     }
     @PutMapping("/{id}")
-    public CandidatureDTO updateCandidature(@PathVariable String id,
-                                            @Valid @RequestBody CandidatureDTO dto) {
+    public CandidatureDTO update(@PathVariable String id,
+                                 @RequestBody CandidatureDTO dto) {
         return candidatureService.updateCandidature(id, dto);
     }
 
-
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{id}")
     public void delete(@PathVariable String id) {
         candidatureService.deleteCandidature(id);
     }
 
     @GetMapping("/my")
-    public List<CandidatureDTO> getMyCandidatures(@RequestParam String email) {
+    public List<CandidatureDTO> my(@RequestParam String email) {
         return candidatureService.getCandidaturesByEmail(email);
     }
+// Ajouter dans CandidatureController
 
+    @GetMapping("/project/{projectId}/ranking")
+    public List<CandidatureDTO> getCandidatesRanking(@PathVariable String projectId) {
+        return candidatureService.getCandidaturesByProject(projectId);
+    }
+
+    @GetMapping("/project/{projectId}/top/{limit}")
+    public List<CandidatureDTO> getTopCandidates(@PathVariable String projectId,
+                                                 @PathVariable int limit) {
+        return candidatureService.getTopCandidatesForProject(projectId, limit);
+    }
+
+    @GetMapping("/recommended")
+    public List<CandidatureDTO> getRecommendedCandidates() {
+        return candidatureService.getRecommendedCandidates();
+    }
+
+    @GetMapping("/project/{projectId}/stats")
+    public Map<String, Object> getMatchingStats(@PathVariable String projectId) {
+        return candidatureService.getMatchingStats(projectId);
+    }
 }

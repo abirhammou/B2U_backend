@@ -29,6 +29,8 @@ public class Candidature {
     private List<String> competences;
     private String cvLien;
     private String lettreMotivation;
+    private int scoreMatching;
+
 
     public Candidature() {}
 
@@ -36,6 +38,13 @@ public class Candidature {
     public String getIdCandidature() { return idCandidature; }
     public void setIdCandidature(String idCandidature) { this.idCandidature = idCandidature; }
 
+    public int getScoreMatching() {
+        return scoreMatching;
+    }
+
+    public void setScoreMatching(int scoreMatching) {
+        this.scoreMatching = scoreMatching;
+    }
     public String getNomCandidat() { return nomCandidat; }
     public void setNomCandidat(String nomCandidat) { this.nomCandidat = nomCandidat; }
 

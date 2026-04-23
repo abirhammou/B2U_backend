@@ -39,11 +39,20 @@ public class CandidatureDTO {
     private List<String> competences;
     private String cvLien;
     private String lettreMotivation;
+    private int scoreMatching;
+
 
     // Constructeur vide
     public CandidatureDTO() {}
 
     // Getters et Setters
+    public int getScoreMatching() {
+        return scoreMatching;
+    }
+
+    public void setScoreMatching(int scoreMatching) {
+        this.scoreMatching = scoreMatching;
+    }
     public String getIdCandidature() { return idCandidature; }
     public void setIdCandidature(String idCandidature) { this.idCandidature = idCandidature; }
 
