@@ -17,4 +17,6 @@ public interface IEntrepriseService {
 
     long getTotalCompaniesCount();
     Map<String, Long> getCountBySector();
+
+    List<Entreprise> getSimilar(String id);
 }

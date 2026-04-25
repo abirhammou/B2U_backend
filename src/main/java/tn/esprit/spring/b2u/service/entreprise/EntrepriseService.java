@@ -1,12 +1,15 @@
 package tn.esprit.spring.b2u.service.entreprise;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import tn.esprit.spring.b2u.DTO.EntrepriseDTO;
 import tn.esprit.spring.b2u.entity.Entreprise;
 import tn.esprit.spring.b2u.exception.DuplicateResourceException;
 import tn.esprit.spring.b2u.exception.ResourceNotFoundException;
 import tn.esprit.spring.b2u.repository.EntrepriseRepo;
+import tn.esprit.spring.b2u.repository.UserRepository;
+import tn.esprit.spring.b2u.entity.User;
 
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +22,8 @@ import java.util.stream.Collectors;
 public class EntrepriseService implements IEntrepriseService{
 
     private final EntrepriseRepo enterpriseRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<Entreprise> getAllEnterprises() {
@@ -34,13 +39,20 @@ public class EntrepriseService implements IEntrepriseService{
     public void createEnterprise(EntrepriseDTO dto) {
 
         if (enterpriseRepository.existsByName(dto.getName())) {
-            throw new DuplicateResourceException("An enterprise with name '" + dto.getName() + "' already exists.");
+            throw new DuplicateResourceException("Enterprise already exists");
         }
 
-        if (enterpriseRepository.existsByPhone(dto.getPhone())) {
-            throw new DuplicateResourceException("An enterprise with phone '" + dto.getPhone() + "' already exists.");
-        }
+        // 1. Créer user company
+        User user = new User();
+        user.setFirstName(dto.getName());
+        user.setLastName("Company");
+        user.setEmail(dto.getEmail());
+        user.setPassword(passwordEncoder.encode("company123")); // password par défaut
+        user.setRole("ROLE_COMPANY");
 
+        user = userRepository.save(user);
+
+        // 2. Créer entreprise
         Entreprise enterprise = new Entreprise();
         enterprise.setName(dto.getName());
         enterprise.setDescription(dto.getDescription());
@@ -49,8 +61,15 @@ public class EntrepriseService implements IEntrepriseService{
         enterprise.setEmail(dto.getEmail());
         enterprise.setPhone(dto.getPhone());
 
+        enterprise.setUserId(user.getId()); // 🔗 lien
+
         enterpriseRepository.save(enterprise);
+
+        // 3. update user avec entrepriseId
+        user.setEntrepriseId(enterprise.getId());
+        userRepository.save(user);
     }
+
     @Override
     public Entreprise updateEnterprise(String id, EntrepriseDTO dto) {
         Entreprise existing = enterpriseRepository.findById(id)
@@ -95,5 +114,25 @@ public class EntrepriseService implements IEntrepriseService{
                         Entreprise::getSector,
                         Collectors.counting()
                 ));
+    }
+
+    @Override
+    public List<Entreprise> getSimilar(String id) {
+
+        Entreprise e = enterpriseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Entreprise not found with id: " + id));
+
+        String sector = e.getSector();
+
+        if (sector == null) {
+            return List.of(); // rien à comparer
+        }
+
+        return enterpriseRepository.findAll()
+                .stream()
+                .filter(ent -> ent.getSector() != null)
+                .filter(ent -> sector.equals(ent.getSector()))
+                .filter(ent -> !ent.getId().equals(id))
+                .collect(Collectors.toList());
     }
 }

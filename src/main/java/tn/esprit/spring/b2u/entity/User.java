@@ -14,7 +14,9 @@ public class User {
     private String lastName;
     private String email;
     private String password;
-    private String role; // ADMIN ou USER
+    private String role;// ADMIN ou USER
+
+    private String entrepriseId;
 
     public User() {}
 
@@ -67,4 +69,8 @@ public class User {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
+
+    public String getEntrepriseId() { return entrepriseId; }
+
+    public void setEntrepriseId(String entrepriseId) { this.entrepriseId = entrepriseId; }
 }
