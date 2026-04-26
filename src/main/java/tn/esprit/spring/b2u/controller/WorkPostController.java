@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.b2u.entity.WorkPost;
 import tn.esprit.spring.b2u.service.workPost.IWorkPostService;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -16,7 +17,12 @@ public class WorkPostController {
 
     // ✔ créer mission
     @PostMapping("/add")
-    public WorkPost create(@RequestBody WorkPost post) {
+    public WorkPost create(@RequestBody WorkPost post, Principal principal) {
+
+        String entrepriseId = principal.getName(); // ou depuis JWT
+
+        post.setEntrepriseId(entrepriseId);
+
         return workPostService.create(post);
     }
 

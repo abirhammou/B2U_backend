@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.time.LocalDateTime;
+
 @Data
 @Document(collection = "work_posts")
 public class WorkPost {
@@ -16,8 +18,11 @@ public class WorkPost {
     private String title;
     private String description;
 
-    private int hoursPerWeek; // combien l'étudiant travaille
-    private int durationWeeks; // durée de la mission
+    private int hoursPerWeek;
+    private int durationWeeks;
 
-    private String requiredSkills; // simple string pour l'instant
+    private String requiredSkills;
+
+    private WorkPostStatus status = WorkPostStatus.ACTIVE;
+    private LocalDateTime createdAt;
 }
