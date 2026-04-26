@@ -108,4 +108,10 @@ public class EntrepriseController {
     public List<Equipe> getEquipesByEntreprise(@PathVariable String id) {
         return equipeService.getEquipesByEntreprise(id);
     }
+
+    @GetMapping("/{id}/similar")
+    @Operation(summary = "Get similar enterprises by sector")
+    public List<Entreprise> getSimilar(@PathVariable String id) {
+        return enterpriseService.getSimilar(id);
+    }
 }
