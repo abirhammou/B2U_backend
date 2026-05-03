@@ -16,13 +16,13 @@ public class WorkPost {
     private String entrepriseId;
 
     private String title;
-    private String description;
-
     private int hoursPerWeek;
-    private int durationWeeks;
 
     private String requiredSkills;
 
     private WorkPostStatus status = WorkPostStatus.ACTIVE;
     private LocalDateTime createdAt;
+
+    private WorkMode workMode;
+
 }
