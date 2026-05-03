@@ -71,15 +71,7 @@ public class WorkPostService implements IWorkPostService{
                 .collect(Collectors.toList());
     }
 
-    // Helper method to set status to EXPIRED if past due date
     private WorkPost updateExpiredStatus(WorkPost post) {
-        if (post.getStatus() == WorkPostStatus.EXPIRED) return post; // already expired
-        if (post.getCreatedAt() == null) return post;
-
-        LocalDateTime expiryDate = post.getCreatedAt().plusWeeks(post.getDurationWeeks());
-        if (LocalDateTime.now().isAfter(expiryDate)) {
-            post.setStatus(WorkPostStatus.EXPIRED);
-        }
         return post;
     }
 }
