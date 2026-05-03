@@ -17,10 +17,12 @@ public class WorkPost {
 
     private String title;
     private int hoursPerWeek;
+
     private String requiredSkills;
 
     private WorkPostStatus status = WorkPostStatus.ACTIVE;
     private LocalDateTime createdAt;
 
     private WorkMode workMode;
+
 }

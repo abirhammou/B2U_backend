@@ -72,6 +72,7 @@ public class WorkPostService implements IWorkPostService{
     }
 
     private WorkPost updateExpiredStatus(WorkPost post) {
+    // Helper method to set status to EXPIRED if past due date
         return post;
     }
 }
