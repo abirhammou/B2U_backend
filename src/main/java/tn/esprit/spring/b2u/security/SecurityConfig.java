@@ -42,6 +42,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/candidatures/upload").permitAll()
                         .requestMatchers("/api/candidatures/my").permitAll()
                         .requestMatchers("/api/projets/**").permitAll()  // ← AJOUTER CETTE LIGNE
+                        .requestMatchers("/api/sprints/**").permitAll()
+                        .requestMatchers("/api/tasks/**").permitAll()
+                        .requestMatchers("/api/daily-meetings/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
+                        .requestMatchers("/equipe/**").permitAll()
                         // Swagger UI (if you have it)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // All other requests need authentication
