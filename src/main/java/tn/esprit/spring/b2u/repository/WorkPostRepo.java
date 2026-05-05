@@ -8,4 +8,5 @@ import java.util.List;
 public interface WorkPostRepo extends MongoRepository<WorkPost, String> {
 
     List<WorkPost> findByEntrepriseId(String entrepriseId);
+    List<WorkPost> findByProjetId(String projetId);
 }

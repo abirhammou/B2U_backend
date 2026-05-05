@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import tn.esprit.spring.b2u.entity.WorkPost;
 import tn.esprit.spring.b2u.entity.WorkPostStatus;
+import tn.esprit.spring.b2u.repository.ProjetRepository;
 import tn.esprit.spring.b2u.repository.WorkPostRepo;
 
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class WorkPostService implements IWorkPostService{
 
     private final WorkPostRepo workPostRepo;
+    private final ProjetRepository projetRepository;
 
     @Override
     public WorkPost create(WorkPost post) {
@@ -42,15 +44,12 @@ public class WorkPostService implements IWorkPostService{
         WorkPost existing = workPostRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("WorkPost not found: " + id));
 
-        // Preserve creation date
         updatedPost.setCreatedAt(existing.getCreatedAt());
         updatedPost.setId(id);
 
-        // If status is not being manually changed, keep it as is or re‑evaluate expiry
         if (updatedPost.getStatus() == null) {
             updatedPost.setStatus(existing.getStatus());
         }
-        // Re‑check expiry after update
         updatedPost = updateExpiredStatus(updatedPost);
 
         return workPostRepo.save(updatedPost);
@@ -61,8 +60,12 @@ public class WorkPostService implements IWorkPostService{
         workPostRepo.deleteById(id);
     }
 
-    // 🔴 LOGIQUE MÉTIER
-    // recommander missions selon disponibilité étudiant
+    @Override
+    public WorkPost getById(String id) {
+        return workPostRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("WorkPost not found: " + id));
+    }
+
     @Override
     public List<WorkPost> getRecommendedPosts(int maxHours) {
         return workPostRepo.findAll().stream()
@@ -74,5 +77,34 @@ public class WorkPostService implements IWorkPostService{
     private WorkPost updateExpiredStatus(WorkPost post) {
     // Helper method to set status to EXPIRED if past due date
         return post;
+    }
+
+    @Override
+    public WorkPost assignProjet(String workPostId, String projetId) {
+        WorkPost workPost = workPostRepo.findById(workPostId)
+                .orElseThrow(() -> new RuntimeException("WorkPost not found: " + workPostId));
+
+        if (!projetRepository.existsById(projetId)) {
+            throw new RuntimeException("Projet not found: " + projetId);
+        }
+
+        workPost.setProjetId(projetId);
+        return workPostRepo.save(workPost);
+    }
+
+    @Override
+    public WorkPost unassignProjet(String workPostId) {
+        WorkPost workPost = workPostRepo.findById(workPostId)
+                .orElseThrow(() -> new RuntimeException("WorkPost not found: " + workPostId));
+
+        workPost.setProjetId(null);
+        return workPostRepo.save(workPost);
+    }
+
+    @Override
+    public List<WorkPost> getByProjet(String projetId) {
+        return workPostRepo.findByProjetId(projetId).stream()
+                .map(this::updateExpiredStatus)
+                .collect(Collectors.toList());
     }
 }

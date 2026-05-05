@@ -17,8 +17,6 @@ public class WorkPostController {
     private final IWorkPostService workPostService;
     private final AiWorkPostService aiWorkPostService;
 
-
-    // ✔ créer mission
     @PostMapping("/add")
     public WorkPost create(@RequestBody WorkPost post, Principal principal) {
 
@@ -27,33 +25,30 @@ public class WorkPostController {
         return workPostService.create(post);
     }
 
-
-    // ✔ toutes les missions
     @GetMapping("/all")
     public List<WorkPost> getAll() {
         return workPostService.getAll();
     }
 
-
-    // ✔ missions par entreprise
     @GetMapping("/entreprise/{id}")
     public List<WorkPost> getByEntreprise(@PathVariable String id) {
         return workPostService.getByEntreprise(id);
     }
 
-    // ✔ update
     @PutMapping("/update/{id}")
     public WorkPost update(@PathVariable String id, @RequestBody WorkPost post) {
         return workPostService.update(id, post);
     }
 
-
-    // ✔ delete
     @DeleteMapping("/delete/{id}")
     public void delete(@PathVariable String id) {
         workPostService.delete(id);
     }
 
+    @GetMapping("/{id}")
+    public WorkPost getById(@PathVariable String id) {
+        return workPostService.getById(id);
+    }
 
     @GetMapping("/recommended")
     public List<WorkPost> getRecommended(@RequestParam int maxHours) {
