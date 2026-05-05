@@ -59,4 +59,21 @@ public class WorkPostController {
     public WorkPost generateWithAI(@RequestParam String title, @RequestParam String sector) {
         return aiWorkPostService.generateWorkPost(title, sector);
     }
+
+    @PutMapping("/{workPostId}/assign-projet/{projetId}")
+    public WorkPost assignProjet(
+            @PathVariable String workPostId,
+            @PathVariable String projetId) {
+        return workPostService.assignProjet(workPostId, projetId);
+    }
+
+    @PutMapping("/{workPostId}/unassign-projet")
+    public WorkPost unassignProjet(@PathVariable String workPostId) {
+        return workPostService.unassignProjet(workPostId);
+    }
+
+    @GetMapping("/by-projet/{projetId}")
+    public List<WorkPost> getByProjet(@PathVariable String projetId) {
+        return workPostService.getByProjet(projetId);
+    }
 }
