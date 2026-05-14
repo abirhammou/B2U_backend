@@ -44,9 +44,20 @@ public class EquipeService implements IEquipeService {
         equipeRepo.deleteById(id);
     }
 
+    @Override
+    public List<Equipe> getEquipesByEntreprise(String entrepriseId) {
+        return equipeRepo.findByEntrepriseId(entrepriseId);
+    }
 
+    @Override
+    public List<Equipe> getEquipesByEntrepriseId(String entrepriseId) {
+        return List.of();
+    }
 
-
+    @Override
+    public Equipe associerJiraProject(String equipeId, String jiraProjectKey) {
+        return null;
+    }
 
 
 }
