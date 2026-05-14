@@ -1,273 +1,321 @@
 package tn.esprit.spring.b2u.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class CvAnalysisService {
 
+    private static final int MAX_TEXT_CHARS_FOR_HF = 4000;
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(20))
+            .build();
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${hf.api.url:}")
+    private String huggingFaceUrl;
+
+    @Value("${hf.api.token:}")
+    private String huggingFaceToken;
+
+    @Value("${affinda.api.url:}")
+    private String affindaUrl;
+
+    @Value("${affinda.api.token:}")
+    private String affindaToken;
+
+    @Value("${affinda.workspace:}")
+    private String affindaWorkspace;
+
+    @Value("${affinda.collection:}")
+    private String affindaCollection;
+
     public List<String> extractSkillsFromBytes(byte[] pdfBytes) {
         System.out.println("========== CV ANALYSIS START ==========");
-        System.out.println("📦 PDF size: " + pdfBytes.length + " bytes");
 
         try {
             String extractedText = extractTextFromBytes(pdfBytes);
+            Set<String> skills = new LinkedHashSet<>();
 
-            System.out.println("📄 Texte complet du CV:");
-            System.out.println("----------------------------------------");
-            System.out.println(extractedText);
-            System.out.println("----------------------------------------");
+            skills.addAll(extractSkillsWithAffinda(pdfBytes));
+            skills.addAll(extractSkillsWithHuggingFace(extractedText));
+            skills.addAll(extractSkillsFromText(extractedText));
 
-            if (extractedText == null || extractedText.trim().isEmpty()) {
-                System.out.println("⚠️ TEXT IS EMPTY AFTER PDF EXTRACTION");
-                return getDefaultSkills();
-            }
-
-            List<String> skills = extractSkillsFromText(extractedText);
-
-            System.out.println("🎯 Final skills extracted: " + skills);
+            List<String> result = normalizeAndLimit(skills);
+            System.out.println("CV skills extracted: " + result);
             System.out.println("========== CV ANALYSIS END ==========");
 
-            return skills;
+            return result.isEmpty() ? getDefaultSoftwareEngineeringSkills() : result;
 
         } catch (Exception e) {
-            System.out.println("❌ CV API ERROR OCCURRED");
-            System.out.println("📍 Message: " + e.getMessage());
-            e.printStackTrace();
+            System.out.println("CV analysis failed: " + e.getMessage());
             return getDefaultSkills();
         }
     }
 
-    private String extractTextFromBytes(byte[] pdfBytes) throws IOException {
-        System.out.println("📥 Extracting text from PDF bytes...");
+    private List<String> extractSkillsWithAffinda(byte[] pdfBytes) {
+        if (!isConfigured(affindaUrl, affindaToken)) {
+            System.out.println("Affinda API skipped: missing AFFINDA_API_TOKEN.");
+            return List.of();
+        }
 
-        try (InputStream inputStream = new ByteArrayInputStream(pdfBytes);
-             PDDocument document = PDDocument.load(inputStream)) {
+        try {
+            String boundary = "----B2UAffindaBoundary" + System.currentTimeMillis();
+            byte[] body = buildAffindaMultipartBody(pdfBytes, boundary);
 
-            PDFTextStripper stripper = new PDFTextStripper();
-            String text = stripper.getText(document);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(affindaUrl))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Authorization", "Bearer " + affindaToken)
+                    .header("Accept", "application/json")
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build();
 
-            if (text != null && !text.trim().isEmpty()) {
-                System.out.println("✅ PDF extracted successfully");
-                System.out.println("📝 Text length: " + text.length());
-                System.out.println("📝 First 200 chars: " + text.substring(0, Math.min(200, text.length())));
-            } else {
-                System.out.println("⚠️ PDF extracted but text is empty");
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                System.out.println("Affinda API error: HTTP " + response.statusCode());
+                return List.of();
             }
 
-            return text;
+            JsonNode root = objectMapper.readTree(response.body());
+            Set<String> skills = new LinkedHashSet<>();
+            collectAffindaSkills(root, skills);
+            System.out.println("Affinda skills: " + skills);
+            return new ArrayList<>(skills);
+
         } catch (Exception e) {
-            System.out.println("❌ PDF extraction failed: " + e.getMessage());
+            System.out.println("Affinda API unavailable: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    private byte[] buildAffindaMultipartBody(byte[] pdfBytes, String boundary) throws IOException {
+        ByteArrayBuilder builder = new ByteArrayBuilder();
+        addMultipartField(builder, boundary, "wait", "true");
+        addMultipartField(builder, boundary, "compact", "true");
+
+        if (affindaWorkspace != null && !affindaWorkspace.isBlank()) {
+            addMultipartField(builder, boundary, "workspace", affindaWorkspace);
+        }
+        if (affindaCollection != null && !affindaCollection.isBlank()) {
+            addMultipartField(builder, boundary, "collection", affindaCollection);
+        }
+
+        builder.append("--").append(boundary).append("\r\n");
+        builder.append("Content-Disposition: form-data; name=\"file\"; filename=\"cv.pdf\"\r\n");
+        builder.append("Content-Type: application/pdf\r\n\r\n");
+        builder.append(pdfBytes);
+        builder.append("\r\n--").append(boundary).append("--\r\n");
+        return builder.toByteArray();
+    }
+
+    private void addMultipartField(ByteArrayBuilder builder, String boundary, String name, String value) {
+        builder.append("--").append(boundary).append("\r\n");
+        builder.append("Content-Disposition: form-data; name=\"").append(name).append("\"\r\n\r\n");
+        builder.append(value).append("\r\n");
+    }
+
+    private void collectAffindaSkills(JsonNode node, Set<String> skills) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+
+        if (node.isObject()) {
+            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+            while (fields.hasNext()) {
+                Map.Entry<String, JsonNode> field = fields.next();
+                String name = field.getKey().toLowerCase();
+                JsonNode value = field.getValue();
+
+                if (name.contains("skill") || name.contains("competenc")) {
+                    collectTextValues(value, skills);
+                }
+                collectAffindaSkills(value, skills);
+            }
+            return;
+        }
+
+        if (node.isArray()) {
+            node.forEach(child -> collectAffindaSkills(child, skills));
+        }
+    }
+
+    private void collectTextValues(JsonNode node, Set<String> values) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+
+        if (node.isTextual()) {
+            addIfSkillLike(values, node.asText());
+            return;
+        }
+
+        if (node.isObject()) {
+            List<String> preferredKeys = Arrays.asList("name", "raw", "parsed", "value", "text");
+            for (String key : preferredKeys) {
+                JsonNode value = node.get(key);
+                if (value != null && value.isTextual()) {
+                    addIfSkillLike(values, value.asText());
+                }
+            }
+            node.fields().forEachRemaining(field -> collectTextValues(field.getValue(), values));
+            return;
+        }
+
+        if (node.isArray()) {
+            node.forEach(child -> collectTextValues(child, values));
+        }
+    }
+
+    private List<String> extractSkillsWithHuggingFace(String text) {
+        if (!isConfigured(huggingFaceUrl, huggingFaceToken) || text == null || text.isBlank()) {
+            System.out.println("Hugging Face API skipped: missing HF_API_TOKEN or empty CV text.");
+            return List.of();
+        }
+
+        try {
+            String safeText = text.length() > MAX_TEXT_CHARS_FOR_HF
+                    ? text.substring(0, MAX_TEXT_CHARS_FOR_HF)
+                    : text;
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("inputs", safeText);
+            payload.put("parameters", Map.of("aggregation_strategy", "simple"));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(huggingFaceUrl))
+                    .timeout(Duration.ofSeconds(60))
+                    .header("Authorization", "Bearer " + huggingFaceToken)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                System.out.println("Hugging Face API error: HTTP " + response.statusCode());
+                return List.of();
+            }
+
+            JsonNode root = objectMapper.readTree(response.body());
+            Set<String> skills = new LinkedHashSet<>();
+            collectHuggingFaceTerms(root, skills);
+            System.out.println("Hugging Face terms: " + skills);
+            return new ArrayList<>(skills);
+
+        } catch (Exception e) {
+            System.out.println("Hugging Face API unavailable: " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    private void collectHuggingFaceTerms(JsonNode node, Set<String> skills) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+
+        if (node.isArray()) {
+            node.forEach(child -> collectHuggingFaceTerms(child, skills));
+            return;
+        }
+
+        if (node.isObject()) {
+            JsonNode word = node.get("word");
+            if (word == null) {
+                word = node.get("entity");
+            }
+            if (word != null && word.isTextual()) {
+                String candidate = word.asText().replace("##", "").trim();
+                if (isKnownTechnology(candidate)) {
+                    addIfSkillLike(skills, candidate);
+                }
+            }
+            node.fields().forEachRemaining(field -> collectHuggingFaceTerms(field.getValue(), skills));
+        }
+    }
+
+    private String extractTextFromBytes(byte[] pdfBytes) throws IOException {
+        try (InputStream inputStream = new ByteArrayInputStream(pdfBytes);
+             PDDocument document = PDDocument.load(inputStream)) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            return stripper.getText(document);
+        } catch (Exception e) {
             throw new IOException("Failed to extract PDF text", e);
         }
     }
 
     private List<String> extractSkillsFromText(String text) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+
         Set<String> foundSkills = new HashSet<>();
         String lowerText = text.toLowerCase();
 
-        Map<String, List<String>> skillCategories = new HashMap<>();
-
-        // ===== SOFTWARE ENGINEERING SKILLS =====
-
-        // Langages de programmation
-        skillCategories.put("programming_languages", Arrays.asList(
-                "java", "python", "javascript", "typescript", "c++", "c#", "php", "ruby",
-                "go", "swift", "kotlin", "rust", "scala", "groovy", "perl", "r", "matlab"
-        ));
-
-        // Frameworks Backend
-        skillCategories.put("backend_frameworks", Arrays.asList(
-                "spring", "spring boot", "spring mvc", "spring security", "hibernate", "jpa",
-                "jakarta ee", "java ee", "node.js", "express", "django", "flask", "fastapi",
-                "laravel", "symfony", "ruby on rails", "asp.net", ".net core", "gin", "echo"
-        ));
-
-        // Frameworks Frontend
-        skillCategories.put("frontend_frameworks", Arrays.asList(
-                "react", "react js", "next.js", "angular", "angular js", "vue", "vue.js",
-                "nuxt.js", "svelte", "jquery", "bootstrap", "tailwind css", "material ui",
-                "ant design", "semantic ui", "bulma", "foundation"
-        ));
-
-        // Bases de données
-        skillCategories.put("databases", Arrays.asList(
-                "mysql", "postgresql", "mongodb", "oracle", "sql server", "sqlite",
-                "mariadb", "cassandra", "redis", "elasticsearch", "dynamodb", "firebase",
-                "realm", "couchdb", "neo4j", "influxdb", "timescaledb"
-        ));
-
-        // Cloud & DevOps
-        skillCategories.put("cloud_devops", Arrays.asList(
-                "aws", "amazon web services", "azure", "microsoft azure", "gcp", "google cloud",
-                "docker", "kubernetes", "jenkins", "gitlab ci", "github actions", "circleci",
-                "travis ci", "terraform", "ansible", "puppet", "chef", "prometheus", "grafana",
-                "elk", "splunk", "cloudformation", "helm"
-        ));
-
-        // Architecture & Design Patterns
-        skillCategories.put("architecture", Arrays.asList(
-                "microservices", "monolithic", "serverless", "event driven", "cqrs", "event sourcing",
-                "hexagonal architecture", "clean architecture", "onion architecture", "ddd",
-                "domain driven design", "tdd", "test driven development", "bdd", "behaviour driven",
-                "solid principles", "design patterns", "oop", "object oriented", "functional programming"
-        ));
-
-        // Tests & Qualité
-        skillCategories.put("testing", Arrays.asList(
-                "junit", "testng", "mockito", "powermock", "assertj", "selenium", "cypress",
-                "playwright", "puppeteer", "jest", "mocha", "chai", "karma", "protractor",
-                "postman", "newman", "soapui", "jmeter", "gatling", "sonarqube", "jacoco"
-        ));
-
-        // APIs & Intégration
-        skillCategories.put("apis", Arrays.asList(
-                "rest", "restful", "rest api", "graphql", "soap", "grpc", "websocket",
-                "socket.io", "openapi", "swagger", "postman", "apache camel", "spring integration"
-        ));
-
-        // Version Control & Collaboration
-        skillCategories.put("version_control", Arrays.asList(
-                "git", "github", "gitlab", "bitbucket", "svn", "mercurial", "perforce",
-                "jira", "confluence", "trello", "slack", "teams", "discord"
-        ));
-
-        // Méthodologies Agiles
-        skillCategories.put("agile", Arrays.asList(
-                "agile", "scrum", "kanban", "sprint", "jira", "trello", "agile methodology",
-                "scrum master", "product owner", "extreme programming", "xp", "lean"
-        ));
-
-        // IDE & Outils
-        skillCategories.put("ide_tools", Arrays.asList(
-                "intellij idea", "eclipse", "visual studio", "vs code", "netbeans", "android studio",
-                "pycharm", "webstorm", "phpstorm", "sublime text", "atom", "vim", "emacs"
-        ));
-
-        // Build Tools
-        skillCategories.put("build_tools", Arrays.asList(
-                "maven", "gradle", "ant", "npm", "yarn", "webpack", "vite", "babel",
-                "gulp", "grunt", "rollup", "parcel", "make", "cmake"
-        ));
-
-        // ===== EMBEDDED & IoT SKILLS =====
-
-        // IoT Frameworks
-        skillCategories.put("iot_frameworks", Arrays.asList(
-                "arduino", "raspberry pi", "esp32", "esp8266", "nodemcu", "mbed",
-                "zephyr", "freertos", "threadx", "embos", "riot", "contiki"
-        ));
-
-        // IoT Platforms
-        skillCategories.put("iot_platforms", Arrays.asList(
-                "aws iot", "azure iot", "google cloud iot", "thingsboard", "blynk",
-                "particle", "tuya", "ibm watson iot", "oracle iot"
-        ));
-
-        // Communication Protocols
-        skillCategories.put("communication_protocols", Arrays.asList(
-                "mqtt", "coap", "http", "https", "websocket", "amqp", "zigbee",
-                "z-wave", "ble", "bluetooth low energy", "lora", "lorawan",
-                "nb-iot", "sigfox", "wifi", "ethernet", "can bus", "modbus",
-                "i2c", "spi", "uart", "usb", "rs232", "rs485"
-        ));
-
-        // Microcontrollers
-        skillCategories.put("microcontrollers", Arrays.asList(
-                "arduino uno", "arduino mega", "esp32", "esp8266", "stm32",
-                "nrf52", "nrf52840", "atmega328", "atmega2560", "arm cortex-m",
-                "raspberry pi pico", "teensy", "beaglebone", "nucleo"
-        ));
-
-        // Embedded OS
-        skillCategories.put("embedded_os", Arrays.asList(
-                "freertos", "rtos", "zephyr", "embos", "threadx", "mbed os",
-                "linux embedded", "yocto", "buildroot", "ubuntu core"
-        ));
-
-        // Electronics & Hardware
-        skillCategories.put("electronics", Arrays.asList(
-                "circuit design", "pcb design", "electronics", "soldering", "oscilloscope",
-                "multimeter", "logic analyzer", "signal processing", "fpga", "verilog", "vhdl"
-        ));
-
-        // ===== GENERAL SKILLS =====
-        skillCategories.put("general", Arrays.asList(
-                "iot", "internet of things", "embedded systems", "mobile development",
-                "system design", "full stack", "backend developer", "frontend developer",
-                "devops engineer", "software architect", "tech lead", "scrum master"
-        ));
-
-        // Scanner toutes les catégories
-        for (Map.Entry<String, List<String>> category : skillCategories.entrySet()) {
-            for (String skill : category.getValue()) {
-                String lowerSkill = skill.toLowerCase();
-                if (lowerText.contains(lowerSkill)) {
-                    foundSkills.add(capitalizeSkill(skill));
-                    System.out.println("🔍 Found skill: " + skill);
-                }
+        for (String skill : getKnownSkills()) {
+            String lowerSkill = skill.toLowerCase();
+            if (lowerText.contains(lowerSkill)) {
+                foundSkills.add(capitalizeSkill(skill));
             }
         }
 
-        // Si aucune compétence trouvée, chercher dans les sections spécifiques
         if (foundSkills.isEmpty()) {
-            System.out.println("⚠️ No skills found in standard lists, looking for COMPETENCES section...");
+            extractSkillsFromSkillsSection(lowerText, foundSkills);
+        }
 
-            String[] sectionMarkers = {
-                    "compétences", "competences", "skills", "technical skills",
-                    "technologies", "outils", "tools", "langages", "frameworks",
-                    "soft skills", "competencies"
-            };
+        return normalizeAndLimit(foundSkills);
+    }
 
-            for (String marker : sectionMarkers) {
-                int index = lowerText.indexOf(marker);
-                if (index != -1) {
-                    int start = index + marker.length();
-                    int end = Math.min(start + 1000, lowerText.length());
-                    String section = lowerText.substring(start, end);
+    private void extractSkillsFromSkillsSection(String lowerText, Set<String> foundSkills) {
+        String[] sectionMarkers = {
+                "competences", "skills", "technical skills",
+                "technologies", "outils", "tools", "langages", "frameworks"
+        };
 
-                    int nextMarker = findNextMarker(section, sectionMarkers);
-                    if (nextMarker != -1) {
-                        section = section.substring(0, nextMarker);
-                    }
+        for (String marker : sectionMarkers) {
+            int index = lowerText.indexOf(marker);
+            if (index != -1) {
+                int start = index + marker.length();
+                int end = Math.min(start + 1000, lowerText.length());
+                String section = lowerText.substring(start, end);
 
-                    String[] possibleSkills = section.split("[,;•\n\r•●○■▪✓✅]");
-                    for (String possible : possibleSkills) {
-                        possible = possible.trim();
-                        if (possible.length() > 2 && possible.length() < 50 &&
-                                !possible.contains("http") && !possible.contains("www")) {
-                            foundSkills.add(capitalizeSkill(possible));
-                            System.out.println("🔍 Found from section: " + possible);
-                        }
-                    }
-                    break;
+                int nextMarker = findNextMarker(section, sectionMarkers);
+                if (nextMarker != -1) {
+                    section = section.substring(0, nextMarker);
                 }
+
+                String[] possibleSkills = section.split("[,;\\n\\r]");
+                for (String possible : possibleSkills) {
+                    addIfSkillLike(foundSkills, possible);
+                }
+                break;
             }
         }
-
-        // Convertir Set en List et limiter à 15 compétences max (augmenté pour software engineering)
-        List<String> result = new ArrayList<>(foundSkills);
-        if (result.size() > 15) {
-            result = result.subList(0, 15);
-        }
-
-        // Trier par ordre alphabétique pour meilleure lisibilité
-        Collections.sort(result);
-
-        // Si aucune compétence trouvée, retourner les compétences par défaut
-        if (result.isEmpty()) {
-            System.out.println("⚠️ No skills extracted, using default software engineering skills");
-            return getDefaultSoftwareEngineeringSkills();
-        }
-
-        System.out.println("✅ Extracted " + result.size() + " unique skills");
-        return result;
     }
 
     private int findNextMarker(String text, String[] markers) {
@@ -281,52 +329,92 @@ public class CvAnalysisService {
         return minIndex != Integer.MAX_VALUE ? minIndex : -1;
     }
 
+    private void addIfSkillLike(Set<String> skills, String value) {
+        if (value == null) {
+            return;
+        }
+        String cleaned = value
+                .replaceAll("[\\[\\]{}()\"']", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        if (cleaned.length() >= 2 && cleaned.length() <= 50 && !cleaned.contains("http") && !cleaned.contains("@")) {
+            skills.add(capitalizeSkill(cleaned));
+        }
+    }
+
+    private boolean isKnownTechnology(String candidate) {
+        if (candidate == null || candidate.isBlank()) {
+            return false;
+        }
+        String lower = candidate.toLowerCase().trim();
+        return getKnownSkills().stream().anyMatch(skill -> skill.equalsIgnoreCase(lower));
+    }
+
+    private List<String> normalizeAndLimit(Set<String> skills) {
+        List<String> result = new ArrayList<>(skills);
+        result.removeIf(skill -> skill == null || skill.isBlank());
+        Collections.sort(result);
+        if (result.size() > 20) {
+            return result.subList(0, 20);
+        }
+        return result;
+    }
+
+    private boolean isConfigured(String url, String token) {
+        return url != null && !url.isBlank() && token != null && !token.isBlank();
+    }
+
+    private List<String> getKnownSkills() {
+        return Arrays.asList(
+                "java", "python", "javascript", "typescript", "c++", "c#", "php", "ruby",
+                "go", "swift", "kotlin", "rust", "scala", "spring", "spring boot",
+                "spring mvc", "spring security", "hibernate", "jpa", "node.js", "express",
+                "django", "flask", "fastapi", "laravel", "symfony", "react", "react js",
+                "next.js", "angular", "angular js", "vue", "vue.js", "svelte", "bootstrap",
+                "tailwind css", "material ui", "mysql", "postgresql", "mongodb", "oracle",
+                "sql server", "redis", "firebase", "aws", "azure", "gcp", "docker",
+                "kubernetes", "jenkins", "gitlab ci", "github actions", "terraform",
+                "ansible", "microservices", "clean architecture", "tdd", "bdd", "solid",
+                "design patterns", "junit", "mockito", "selenium", "cypress", "playwright",
+                "jest", "postman", "rest", "rest api", "graphql", "soap", "grpc",
+                "git", "github", "gitlab", "scrum", "kanban", "maven", "gradle",
+                "npm", "yarn", "arduino", "raspberry pi", "esp32", "mqtt", "iot",
+                "embedded systems", "freertos", "rtos"
+        );
+    }
+
     private String capitalizeSkill(String skill) {
-        if (skill == null || skill.isEmpty()) return skill;
+        if (skill == null || skill.isBlank()) return skill;
 
-        String lowerSkill = skill.toLowerCase();
-
-        // Cas spéciaux pour Software Engineering
+        String lowerSkill = skill.toLowerCase().trim();
         Map<String, String> specialCases = new HashMap<>();
         specialCases.put("c++", "C++");
         specialCases.put("c#", "C#");
         specialCases.put("freertos", "FreeRTOS");
         specialCases.put("mqtt", "MQTT");
-        specialCases.put("coap", "CoAP");
         specialCases.put("esp32", "ESP32");
-        specialCases.put("esp8266", "ESP8266");
-        specialCases.put("stm32", "STM32");
-        specialCases.put("aws iot", "AWS IoT");
-        specialCases.put("azure iot", "Azure IoT");
-        specialCases.put("raspberry pi", "Raspberry Pi");
-        specialCases.put("arduino", "Arduino");
+        specialCases.put("aws", "AWS");
+        specialCases.put("gcp", "GCP");
         specialCases.put("iot", "IoT");
         specialCases.put("rtos", "RTOS");
         specialCases.put("node.js", "Node.js");
-        specialCases.put(".net", ".NET");
         specialCases.put("react js", "React.js");
         specialCases.put("vue.js", "Vue.js");
         specialCases.put("spring boot", "Spring Boot");
-        specialCases.put("spring security", "Spring Security");
+        specialCases.put("rest api", "REST API");
 
         if (specialCases.containsKey(lowerSkill)) {
             return specialCases.get(lowerSkill);
         }
 
-        // Capitaliser normalement
-        String[] words = skill.split(" ");
+        String[] words = lowerSkill.split(" ");
         StringBuilder result = new StringBuilder();
         for (String word : words) {
-            if (word.length() > 0) {
-                // Garder certains mots en majuscules
-                if (word.equalsIgnoreCase("api") || word.equalsIgnoreCase("iot") ||
-                        word.equalsIgnoreCase("ide") || word.equalsIgnoreCase("os")) {
-                    result.append(word.toUpperCase()).append(" ");
-                } else {
-                    result.append(Character.toUpperCase(word.charAt(0)))
-                            .append(word.substring(1).toLowerCase())
-                            .append(" ");
-                }
+            if (!word.isBlank()) {
+                result.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1))
+                        .append(" ");
             }
         }
         return result.toString().trim();
@@ -343,10 +431,23 @@ public class CvAnalysisService {
         );
     }
 
-    private List<String> getEmbeddedDefaultSkills() {
-        return Arrays.asList(
-                "C", "C++", "Python", "IoT", "Embedded Systems",
-                "Arduino", "ESP32", "MQTT", "RTOS", "Microcontrollers"
-        );
+    private static class ByteArrayBuilder {
+        private byte[] buffer = new byte[0];
+
+        ByteArrayBuilder append(String value) {
+            return append(value.getBytes(StandardCharsets.UTF_8));
+        }
+
+        ByteArrayBuilder append(byte[] bytes) {
+            byte[] next = new byte[buffer.length + bytes.length];
+            System.arraycopy(buffer, 0, next, 0, buffer.length);
+            System.arraycopy(bytes, 0, next, buffer.length, bytes.length);
+            buffer = next;
+            return this;
+        }
+
+        byte[] toByteArray() {
+            return buffer;
+        }
     }
 }

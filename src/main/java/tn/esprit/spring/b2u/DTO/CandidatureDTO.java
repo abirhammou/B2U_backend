@@ -36,10 +36,19 @@ public class CandidatureDTO {
     @NotBlank(message = "Le statut est obligatoire")
     private String statutCandidature;
 
+    private String projectId;
+    private String projectTitle;
+    private String projectType;
+    private String companyId;
+    private String companyName;
+
     private List<String> competences;
     private String cvLien;
     private String lettreMotivation;
     private int scoreMatching;
+    private String recommendation;
+    private String matchingDetails;
+    private String interviewPreparation;
 
 
     // Constructeur vide
@@ -87,6 +96,21 @@ public class CandidatureDTO {
     public String getStatutCandidature() { return statutCandidature; }
     public void setStatutCandidature(String statutCandidature) { this.statutCandidature = statutCandidature; }
 
+    public String getProjectId() { return projectId; }
+    public void setProjectId(String projectId) { this.projectId = projectId; }
+
+    public String getProjectTitle() { return projectTitle; }
+    public void setProjectTitle(String projectTitle) { this.projectTitle = projectTitle; }
+
+    public String getProjectType() { return projectType; }
+    public void setProjectType(String projectType) { this.projectType = projectType; }
+
+    public String getCompanyId() { return companyId; }
+    public void setCompanyId(String companyId) { this.companyId = companyId; }
+
+    public String getCompanyName() { return companyName; }
+    public void setCompanyName(String companyName) { this.companyName = companyName; }
+
     public List<String> getCompetences() { return competences; }
     public void setCompetences(List<String> competences) { this.competences = competences; }
 
@@ -95,4 +119,13 @@ public class CandidatureDTO {
 
     public String getLettreMotivation() { return lettreMotivation; }
     public void setLettreMotivation(String lettreMotivation) { this.lettreMotivation = lettreMotivation; }
+
+    public String getRecommendation() { return recommendation; }
+    public void setRecommendation(String recommendation) { this.recommendation = recommendation; }
+
+    public String getMatchingDetails() { return matchingDetails; }
+    public void setMatchingDetails(String matchingDetails) { this.matchingDetails = matchingDetails; }
+
+    public String getInterviewPreparation() { return interviewPreparation; }
+    public void setInterviewPreparation(String interviewPreparation) { this.interviewPreparation = interviewPreparation; }
 }

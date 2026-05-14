@@ -41,6 +41,7 @@ public class SecurityConfig {
                         // For testing only - remove in production
                         .requestMatchers("/api/candidatures/upload").permitAll()
                         .requestMatchers("/api/candidatures/my").permitAll()
+                        .requestMatchers("/api/notifications/**").permitAll()
                         .requestMatchers("/api/projets/**").permitAll()  // ← AJOUTER CETTE LIGNE
                         // Swagger UI (if you have it)
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()

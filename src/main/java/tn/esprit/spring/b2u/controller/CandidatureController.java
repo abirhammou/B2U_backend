@@ -1,6 +1,7 @@
 package tn.esprit.spring.b2u.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 import tn.esprit.spring.b2u.service.candidature.CandidatureService;
 import tn.esprit.spring.b2u.DTO.CandidatureDTO;
@@ -36,6 +37,24 @@ public class CandidatureController {
         return candidatureService.getAllCandidatures();
     }
 
+    @GetMapping("/paged")
+    public Page<CandidatureDTO> getPagedCandidatures(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return candidatureService.getPagedCandidatures(page, size);
+    }
+
+    @GetMapping("/{id}")
+    public CandidatureDTO getById(@PathVariable String id) {
+        return candidatureService.getCandidatureById(id);
+    }
+
+    @PostMapping
+    public CandidatureDTO create(@Valid @RequestBody CandidatureDTO dto) {
+        return candidatureService.createCandidature(dto);
+    }
+
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public CandidatureDTO createCandidature(
             @RequestParam("data") String dtoJson,
@@ -68,6 +87,11 @@ public class CandidatureController {
     @GetMapping("/my")
     public List<CandidatureDTO> my(@RequestParam String email) {
         return candidatureService.getCandidaturesByEmail(email);
+    }
+
+    @GetMapping("/company/{companyId}")
+    public List<CandidatureDTO> getByCompany(@PathVariable String companyId) {
+        return candidatureService.getCandidaturesByCompany(companyId);
     }
 // Ajouter dans CandidatureController
 
