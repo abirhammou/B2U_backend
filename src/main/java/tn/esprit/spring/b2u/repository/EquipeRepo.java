@@ -8,6 +8,5 @@ import java.util.List;
 
 @Repository
 public interface EquipeRepo extends MongoRepository<Equipe, String> {
-
     List<Equipe> findByEntrepriseId(String entrepriseId);
 }

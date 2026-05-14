@@ -1,15 +1,18 @@
 package tn.esprit.spring.b2u.entity;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.mongodb.core.mapping.Field;
 
+import java.util.ArrayList;
+import java.util.List;
+
+// ✅ REMOVED the incorrect import:
+// import org.springframework.data.mongodb.core.messaging.Task;
 
 @Document(collection = "equipes")
-
 @Getter
 @Setter
 @NoArgsConstructor
@@ -24,17 +27,11 @@ public class Equipe {
     String nomMembresEquipe;
     String descriptionProfil;
 
+    List<Task> tasks = new ArrayList<>();  // ✅ Now this uses YOUR Task class
 
+    @Field("entreprise_id")
     String entrepriseId;
 
-
-    // @JsonIgnore
-    // @OneToMany(mappedBy = "equipe", cascade = CascadeType.ALL)
-    //List<Etudiant> etudiants;
-
-
-
-    // @JsonIgnore
-    // @OneToOne(mappedBy = "equipeAssocie")
-    // Projet projet;
+    @Field("jira_project_key")
+    String jiraProjectKey;
 }

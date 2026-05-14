@@ -2,11 +2,8 @@ package tn.esprit.spring.b2u.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -17,7 +14,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.List;
 
 @Configuration
-@EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 
@@ -32,18 +28,22 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Allow OPTIONS requests for CORS preflight
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        // Public endpoints
+
+                        // Allow ALL equipe endpoints (simplest solution for development)
+                        .requestMatchers("/equipe/**").permitAll()
+
+                        // Other public endpoints
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // For testing only - remove in production
-                        .requestMatchers("/api/candidatures/upload").permitAll()
-                        .requestMatchers("/api/candidatures/my").permitAll()
-                        .requestMatchers("/api/projets/**").permitAll()  // ← AJOUTER CETTE LIGNE
-                        // Swagger UI (if you have it)
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/chat/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
+
+                        // Swagger UI endpoints
+                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
+
                         // All other requests need authentication
                         .anyRequest().authenticated()
                 )
@@ -55,15 +55,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(List.of(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "X-Requested-With"
+        config.setAllowedOrigins(List.of(
+                "http://localhost:4200",
+                "http://localhost:3000",
+                "http://localhost:8081"
         ));
-        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

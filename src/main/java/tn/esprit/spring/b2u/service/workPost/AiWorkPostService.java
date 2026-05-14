@@ -19,7 +19,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AiWorkPostService {
 
-    @Value("${groq.api.key}")
+    @Value("${groq.api.key:}")
     private String apiKey;
 
     private final ObjectMapper objectMapper;
