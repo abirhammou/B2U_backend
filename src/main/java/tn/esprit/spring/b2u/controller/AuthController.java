@@ -1,8 +1,8 @@
 package tn.esprit.spring.b2u.controller;
 
 import jakarta.validation.Valid;
+import tn.esprit.spring.b2u.DTO.LoginRequest;
 import tn.esprit.spring.b2u.DTO.RegisterRequest;
-import tn.esprit.spring.b2u.entity.User;
 import tn.esprit.spring.b2u.service.AuthService;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,9 +25,8 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public Map<String, Object> login(@RequestBody Map<String, String> req) {
-        Map<String, Object> result = authService.login(req.get("email"), req.get("password"));
-        return result;
+    public Map<String, Object> login(@Valid @RequestBody LoginRequest req) {
+        return authService.login(req.getEmail(), req.getPassword());
     }
 
 }

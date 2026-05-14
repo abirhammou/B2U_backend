@@ -15,6 +15,7 @@ public class MatchingResult {
     private String recommendation;
     private String level;
     private List<String> matchedSkills;
+    private List<String> partialSkills;
     private List<String> missingSkills;
     private Map<String, Integer> skillScores;
     private String summary;
