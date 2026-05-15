@@ -55,9 +55,21 @@ public class SprintService implements ISprintService {
         Projet projet = projetOpt.get();
         List<Sprint> sprints = new ArrayList<>();
 
-        // Générer 3 sprints automatiquement
+        // Calculer le nombre de sprints selon la deadline
         Date startDate = new Date();
-        for (int i = 1; i <= 3; i++) {
+        Date deadline = projet.getDeadline() != null ? projet.getDeadline() : new Date();
+
+        long diffInMs = deadline.getTime() - startDate.getTime();
+        long diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+        int numberOfSprints = (int) Math.ceil(diffInDays / 14.0);
+        numberOfSprints = Math.max(1, Math.min(numberOfSprints, 12));
+
+        // Supprimer les anciens sprints du projet
+        List<Sprint> existingSprints = sprintRepo.findByProjetId(projetId);
+        sprintRepo.deleteAll(existingSprints);
+
+        // Générer les nouveaux sprints
+        for (int i = 1; i <= numberOfSprints; i++) {
             Sprint sprint = new Sprint();
             sprint.setProjetId(projetId);
             sprint.setName("Sprint " + i);
@@ -65,7 +77,6 @@ public class SprintService implements ISprintService {
             sprint.setStatus(i == 1 ? "active" : "planned");
             sprint.setStartDate(startDate);
 
-            // Chaque sprint dure 2 semaines
             Calendar cal = Calendar.getInstance();
             cal.setTime(startDate);
             cal.add(Calendar.DAY_OF_MONTH, 14);
