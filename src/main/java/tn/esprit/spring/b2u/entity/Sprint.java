@@ -6,20 +6,23 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "tasks")
+import java.util.Date;
+import java.util.List;
+
+@Document(collection = "sprints")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Task {
+public class Sprint {
 
     @Id
     private String id;
 
     private String projetId;
-    private String sprintId;
-    private String title;
-    private String description;
-    private String status; // "todo", "in-progress", "done"
-    private String assignedTo;
-    private int priority; // 1=low, 2=medium, 3=high
+    private String name;
+    private int number;
+    private Date startDate;
+    private Date endDate;
+    private String status; // "planned", "active", "completed"
+    private List<String> taskIds;
 }

@@ -6,20 +6,21 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "tasks")
+import java.util.Date;
+import java.util.List;
+
+@Document(collection = "daily_meetings")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Task {
+public class DailyMeeting {
 
     @Id
     private String id;
 
     private String projetId;
-    private String sprintId;
-    private String title;
-    private String description;
-    private String status; // "todo", "in-progress", "done"
-    private String assignedTo;
-    private int priority; // 1=low, 2=medium, 3=high
+    private String equipeId;
+    private Date meetingDate;
+    private List<DailyResponse> responses;
+    private String summary; // résumé généré par IA
 }

@@ -56,16 +56,22 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/chat/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
+                        .requestMatchers("/api/candidatures/upload").permitAll()
+                        .requestMatchers("/api/candidatures/my").permitAll()
+                        .requestMatchers("/api/projets/**").permitAll()
+                        .requestMatchers("/api/sprints/**").permitAll()
+                        .requestMatchers("/api/tasks/**").permitAll()
+                        .requestMatchers("/api/daily-meetings/**").permitAll()
+                        .requestMatchers("/api/ai/**").permitAll()
+                        .requestMatchers("/equipe/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                        // Protected routes BEFORE the broad /api/** rule
                         .requestMatchers("/api/users/**").authenticated()
                         .requestMatchers("/api/etudiant/**").authenticated()
                         .requestMatchers("/api/entreprise/me").authenticated()
-                        // Public API endpoints
                         .requestMatchers("/api/**").permitAll()
-                        .requestMatchers("/equipe/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
