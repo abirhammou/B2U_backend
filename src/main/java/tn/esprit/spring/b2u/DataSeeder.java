@@ -72,6 +72,17 @@ public class DataSeeder implements ApplicationRunner {
         company2User.setEntrepriseId(e2.getId());
         userRepo.save(company2User);
 
+        // ── Admin ──
+        if (userRepo.findByEmail("admin@b2u.tn").isEmpty()) {
+            User admin = new User();
+            admin.setFirstName("Admin");
+            admin.setLastName("B2U");
+            admin.setEmail("admin@b2u.tn");
+            admin.setPassword(encoder.encode("Admin123!"));
+            admin.setRole("ROLE_ADMIN");
+            userRepo.save(admin);
+        }
+
         // ── Student ──
         if (userRepo.findByEmail("student@b2u.tn").isEmpty()) {
             User student = new User();
@@ -176,7 +187,8 @@ public class DataSeeder implements ApplicationRunner {
         w3.setProjetId(p3.getId());
         workPostRepo.save(w3);
 
-        System.out.println("✅ Seed data loaded: 2 companies, 4 projects, 3 work posts, 1 student account");
+        System.out.println("✅ Seed data loaded: 2 companies, 4 projects, 3 work posts, 1 student, 1 admin");
+        System.out.println("   Admin:     admin@b2u.tn    / Admin123!");
         System.out.println("   Company 1: technova@b2u.tn / Company1!");
         System.out.println("   Company 2: dataflow@b2u.tn / Company1!");
         System.out.println("   Student:   student@b2u.tn  / Student1!");
