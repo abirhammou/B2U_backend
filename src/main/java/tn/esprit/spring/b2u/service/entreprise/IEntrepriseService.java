@@ -19,4 +19,7 @@ public interface IEntrepriseService {
     Map<String, Long> getCountBySector();
 
     List<Entreprise> getSimilar(String id);
+
+    Optional<Entreprise> getByUserId(String userId);
+    Entreprise updateMyEnterprise(String userId, EntrepriseDTO dto);
 }

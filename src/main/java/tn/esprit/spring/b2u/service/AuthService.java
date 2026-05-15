@@ -1,6 +1,8 @@
 package tn.esprit.spring.b2u.service;
 
+import tn.esprit.spring.b2u.entity.Entreprise;
 import tn.esprit.spring.b2u.entity.User;
+import tn.esprit.spring.b2u.repository.EntrepriseRepo;
 import tn.esprit.spring.b2u.repository.UserRepository;
 import tn.esprit.spring.b2u.security.JwtUtil;
 import tn.esprit.spring.b2u.DTO.RegisterRequest;
@@ -15,13 +17,16 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepo;
+    private final EntrepriseRepo entrepriseRepo;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     public AuthService(UserRepository userRepo,
+                       EntrepriseRepo entrepriseRepo,
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil) {
         this.userRepo = userRepo;
+        this.entrepriseRepo = entrepriseRepo;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -67,14 +72,26 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         // 🔐 rôle
-        switch (request.getRole() != null ? request.getRole().toLowerCase() : "") {
+        String roleKey = request.getRole() != null ? request.getRole().toLowerCase() : "";
+        switch (roleKey) {
             case "admin"   -> user.setRole("ROLE_ADMIN");
             case "company" -> user.setRole("ROLE_COMPANY");
             default        -> user.setRole("ROLE_STUDENT");
         }
 
+        user = userRepo.save(user);
 
-        userRepo.save(user);
+        // Auto-create Entreprise for self-registered company users
+        if ("company".equals(roleKey)) {
+            Entreprise enterprise = new Entreprise();
+            enterprise.setName(request.getFirstName() + " " + request.getLastName());
+            enterprise.setEmail(request.getEmail());
+            enterprise.setUserId(user.getId());
+            enterprise = entrepriseRepo.save(enterprise);
+
+            user.setEntrepriseId(enterprise.getId());
+            userRepo.save(user);
+        }
 
         return "Utilisateur créé avec succès";
     }
