@@ -3,7 +3,9 @@ package tn.esprit.spring.b2u.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import tn.esprit.spring.b2u.entity.Entreprise;
 import tn.esprit.spring.b2u.entity.WorkPost;
+import tn.esprit.spring.b2u.repository.EntrepriseRepo;
 import tn.esprit.spring.b2u.service.workPost.AiWorkPostService;
 import tn.esprit.spring.b2u.service.workPost.IWorkPostService;
 
@@ -21,15 +23,25 @@ public class WorkPostController {
     private final IWorkPostService workPostService;
     private final AiWorkPostService aiWorkPostService;
     private final UserRepository userRepository;
+    private final EntrepriseRepo entrepriseRepo;
+
+    private String resolveEntrepriseId(User user) {
+        if (user.getEntrepriseId() != null) return user.getEntrepriseId();
+        Entreprise enterprise = new Entreprise();
+        enterprise.setName(user.getFirstName() + " " + user.getLastName());
+        enterprise.setEmail(user.getEmail());
+        enterprise.setUserId(user.getId());
+        enterprise = entrepriseRepo.save(enterprise);
+        user.setEntrepriseId(enterprise.getId());
+        userRepository.save(user);
+        return enterprise.getId();
+    }
 
     @PostMapping("/add")
     public ResponseEntity<?> create(@RequestBody WorkPost post, Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user.getEntrepriseId() == null) {
-            return ResponseEntity.badRequest().body("Votre compte n'est pas lié à une entreprise. Complétez d'abord votre profil entreprise.");
-        }
-        post.setEntrepriseId(user.getEntrepriseId());
+        post.setEntrepriseId(resolveEntrepriseId(user));
         return ResponseEntity.ok(workPostService.create(post));
     }
 
@@ -42,8 +54,7 @@ public class WorkPostController {
     public List<WorkPost> getMine(Principal principal) {
         User user = userRepository.findByEmail(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        if (user.getEntrepriseId() == null) return List.of();
-        return workPostService.getByEntreprise(user.getEntrepriseId());
+        return workPostService.getByEntreprise(resolveEntrepriseId(user));
     }
 
     @GetMapping("/entreprise/{id}")
