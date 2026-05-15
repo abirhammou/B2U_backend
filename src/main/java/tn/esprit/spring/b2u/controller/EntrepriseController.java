@@ -12,9 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import tn.esprit.spring.b2u.DTO.EntrepriseDTO;
 import tn.esprit.spring.b2u.entity.Entreprise;
 import tn.esprit.spring.b2u.entity.Equipe;
+import tn.esprit.spring.b2u.entity.User;
+import tn.esprit.spring.b2u.repository.UserRepository;
 import tn.esprit.spring.b2u.service.entreprise.IEntrepriseService;
 import tn.esprit.spring.b2u.service.equipe.EquipeService;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +31,7 @@ public class EntrepriseController {
 
     private final IEntrepriseService enterpriseService;
     private final EquipeService equipeService;
+    private final UserRepository userRepository;
 
     @GetMapping("/getAll")
     @Operation(summary = "Get all enterprises", description = "Returns a list of all enterprises")
@@ -107,6 +111,25 @@ public class EntrepriseController {
     @GetMapping("/{id}/equipes")
     public List<Equipe> getEquipesByEntreprise(@PathVariable String id) {
         return equipeService.getEquipesByEntreprise(id);
+    }
+
+    @GetMapping("/me")
+    @Operation(summary = "Obtenir mon entreprise (company user)")
+    public ResponseEntity<?> getMyEnterprise(Principal principal) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return enterpriseService.getByUserId(user.getId())
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/me")
+    @Operation(summary = "Mettre à jour mon entreprise (company user)")
+    public ResponseEntity<Entreprise> updateMyEnterprise(Principal principal,
+                                                          @RequestBody EntrepriseDTO dto) {
+        User user = userRepository.findByEmail(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(enterpriseService.updateMyEnterprise(user.getId(), dto));
     }
 
     @GetMapping("/{id}/similar")
