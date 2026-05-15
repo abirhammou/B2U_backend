@@ -117,6 +117,25 @@ public class EntrepriseService implements IEntrepriseService{
     }
 
     @Override
+    public Optional<Entreprise> getByUserId(String userId) {
+        return enterpriseRepository.findByUserId(userId);
+    }
+
+    @Override
+    public Entreprise updateMyEnterprise(String userId, EntrepriseDTO dto) {
+        Entreprise existing = enterpriseRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Entreprise not found for userId: " + userId));
+
+        existing.setName(dto.getName());
+        existing.setDescription(dto.getDescription());
+        existing.setSector(dto.getSector());
+        existing.setAddress(dto.getAddress());
+        existing.setPhone(dto.getPhone());
+
+        return enterpriseRepository.save(existing);
+    }
+
+    @Override
     public List<Entreprise> getSimilar(String id) {
 
         Entreprise e = enterpriseRepository.findById(id)
