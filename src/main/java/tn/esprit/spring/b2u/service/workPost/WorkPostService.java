@@ -81,14 +81,18 @@ public class WorkPostService implements IWorkPostService{
 
     @Override
     public WorkPost assignProjet(String workPostId, String projetId) {
-        WorkPost workPost = workPostRepo.findById(workPostId)
-                .orElseThrow(() -> new RuntimeException("WorkPost not found: " + workPostId));
 
-        if (!projetRepository.existsById(projetId)) {
-            throw new RuntimeException("Projet not found: " + projetId);
-        }
+        WorkPost workPost = workPostRepo.findById(workPostId)
+                .orElseThrow(() -> new RuntimeException("WorkPost not found"));
+
+        var projet = projetRepository.findById(projetId)
+                .orElseThrow(() -> new RuntimeException("Projet not found"));
 
         workPost.setProjetId(projetId);
+
+        // IMPORTANT
+        workPost.setProjetTitle(projet.getTitle());
+
         return workPostRepo.save(workPost);
     }
 
