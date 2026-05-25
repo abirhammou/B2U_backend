@@ -14,6 +14,18 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
+
+
+
+        stage('Clone Frontend') {
+            steps {
+                dir('frontend') {
+                    git branch: 'main',
+                        url: 'https://github.com/Mouhib223/B2U-HUB.git'
+                }
+                echo '✅ Frontend cloné'
+            }
+        }
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
