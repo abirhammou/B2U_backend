@@ -1,8 +1,16 @@
 package tn.esprit.spring.b2u.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import tn.esprit.spring.b2u.entity.Projet;
 import tn.esprit.spring.b2u.entity.WorkPost;
+import tn.esprit.spring.b2u.entity.Entreprise;
+import tn.esprit.spring.b2u.entity.User;
+import tn.esprit.spring.b2u.repository.ProjetRepository;
+import tn.esprit.spring.b2u.repository.EntrepriseRepo;
+import tn.esprit.spring.b2u.repository.UserRepository;
 import tn.esprit.spring.b2u.service.workPost.AiWorkPostService;
 import tn.esprit.spring.b2u.service.workPost.IWorkPostService;
 
@@ -16,6 +24,21 @@ public class WorkPostController {
 
     private final IWorkPostService workPostService;
     private final AiWorkPostService aiWorkPostService;
+    private final ProjetRepository projetRepository;
+    private final UserRepository userRepository;
+    private final EntrepriseRepo entrepriseRepo;
+
+    private String resolveEntrepriseId(User user) {
+        if (user.getEntrepriseId() != null) return user.getEntrepriseId();
+        Entreprise enterprise = new Entreprise();
+        enterprise.setName(user.getFirstName() + " " + user.getLastName());
+        enterprise.setEmail(user.getEmail());
+        enterprise.setUserId(user.getId());
+        enterprise = entrepriseRepo.save(enterprise);
+        user.setEntrepriseId(enterprise.getId());
+        userRepository.save(user);
+        return enterprise.getId();
+    }
 
     @PostMapping("/add")
     public WorkPost create(@RequestBody WorkPost post, Principal principal) {
@@ -72,8 +95,13 @@ public class WorkPostController {
         return workPostService.unassignProjet(workPostId);
     }
 
-    @GetMapping("/by-projet/{projetId}")
+    @GetMapping("/projet/{projetId}")
     public List<WorkPost> getByProjet(@PathVariable String projetId) {
         return workPostService.getByProjet(projetId);
+    }
+
+    @GetMapping("/projet/{id}")
+    public Projet getProjet(@PathVariable String id) {
+        return projetRepository.findById(id).orElse(null);
     }
 }

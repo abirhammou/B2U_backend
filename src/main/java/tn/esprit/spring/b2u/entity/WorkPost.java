@@ -25,6 +25,7 @@ public class WorkPost {
 
     private WorkMode workMode;
 
-    private String projetId;
+    private String projetId= null;
+    private String projetTitle;
 
 }

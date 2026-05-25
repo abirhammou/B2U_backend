@@ -15,8 +15,13 @@ public interface IEquipeService {
     Equipe modifierEquipe(Equipe equipe);
 
     void supprimerEquipe(String id);
+    List<Equipe> getEquipesByEntreprise(String entrepriseId);
 
 
+    // ✅ NOUVEAU — liaison Entreprise
+    List<Equipe> getEquipesByEntrepriseId(String entrepriseId);
 
+    // ✅ NOUVEAU — liaison Jira
+    Equipe associerJiraProject(String equipeId, String jiraProjectKey);
 
 }

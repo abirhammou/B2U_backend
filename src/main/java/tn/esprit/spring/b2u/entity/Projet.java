@@ -20,10 +20,12 @@ public class Projet {
 
     private String title;
     private String description;
+    private String type;
     private String companyId;
     private String companyName;
     private List<String> technologies;  // ← Changé de requiredSkills à technologies
     private List<String> requiredSkills; // Gardé pour compatibilité    private int teamSize;
+    private int teamSize;
     private Date deadline;
     private String status;
     private int applicantsCount;
