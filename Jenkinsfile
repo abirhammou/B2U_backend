@@ -14,16 +14,19 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
-
-
-
-        stage('Clone Frontend') {
+        stage('Tests') {
             steps {
-                dir('frontend') {
-                    git branch: 'main',
-                        url: 'https://github.com/Mouhib223/B2U-HUB.git'
-                }
-                echo '✅ Frontend cloné'
+                sh 'mvn test'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                sh '''
+                    mvn sonar:sonar \
+                    -Dsonar.projectKey=B2U-backend \
+                    -Dsonar.host.url=http://localhost:9000 \
+                    -Dsonar.login=23037d72020b43477019c785868f97599fab79bd
+                '''
             }
         }
         stage('Package') {
@@ -31,25 +34,30 @@ pipeline {
                 sh 'mvn package -DskipTests'
             }
         }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t b2u-backend:latest .'
+            }
+        }
+        stage('Docker Run') {
+            steps {
+                sh '''
+                    docker stop b2u-backend || true
+                    docker rm b2u-backend || true
+                    docker run -d --name b2u-backend \
+                      --network b2u-network \
+                      -p 8081:8080 \
+                      b2u-backend:latest
+                '''
+            }
+        }
     }
-   stage('SonarQube Analysis') {
-               steps {
-                   sh '''
-                       mvn sonar:sonar \
-                       -Dsonar.projectKey=B2U-backend \
-                       -Dsonar.host.url=http://localhost:9000 \
-                       -Dsonar.login=23037d72020b43477019c785868f97599fab79bd
-                   '''
-               }
-           }
-
-       }
     post {
         success {
-            echo 'Build succeeded!'
+            echo '✅ Pipeline succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo '❌ Pipeline failed!'
         }
     }
 }
