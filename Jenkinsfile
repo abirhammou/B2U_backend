@@ -44,19 +44,14 @@ pipeline {
                 sh 'docker build -t b2u-backend:latest .'
             }
         }
-        stage('Docker Run') {
-            steps {
-                sh '''
-                    docker stop b2u-backend || true
-                    docker rm b2u-backend || true
-                    docker run -d --name b2u-backend \
-                      --network b2u-network \
-                      -p 8081:8080 \
-                      b2u-backend:latest
-                '''
-            }
-        }
-    }
+       stage('Docker Run') {
+           steps {
+               sh '''
+                   docker rm -f b2u-backend || true
+                   docker run -d --name b2u-backend --network b2u-network -p 8081:8080 b2u-backend:latest
+               '''
+           }
+       }
     post {
         success {
             echo '✅ Pipeline succeeded!'
