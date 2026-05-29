@@ -10,6 +10,8 @@ import java.util.List;
 @Repository
 public interface EntrepriseRepo extends MongoRepository<Entreprise, String> {
 
+    java.util.Optional<Entreprise> findByUserId(String userId);
+
     boolean existsByName(String name);
 
     boolean existsByPhone(String phone);
