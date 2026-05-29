@@ -24,12 +24,14 @@ pipeline {
         }
         stage('SonarQube Analysis') {
             steps {
-                sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=B2U-backend \
-                    -Dsonar.host.url=http://localhost:9000 \
-                    -Dsonar.login=23037d72020b43477019c785868f97599fab79bd
-                '''
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=B2U-backend \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
             }
         }
         stage('Package') {
