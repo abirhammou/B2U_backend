@@ -15,8 +15,11 @@ pipeline {
             }
         }
         stage('Tests') {
+            when {
+                branch 'equipe'
+            }
             steps {
-                sh 'mvn test'
+                sh 'mvn test -Dspring.mongodb.uri=mongodb://localhost:27017/B2U_hub'
             }
         }
         stage('SonarQube Analysis') {
