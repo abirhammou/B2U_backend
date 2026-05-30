@@ -14,18 +14,51 @@ pipeline {
                 sh 'mvn clean compile'
             }
         }
+        stage('Tests') {
+            when {
+                branch 'equipe'
+            }
+            steps {
+                sh 'mvn test -Dspring.mongodb.uri=mongodb://localhost:27017/B2U_hub'
+            }
+        }
+        stage('SonarQube Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    sh """
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=B2U-backend \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.login=${SONAR_TOKEN}
+                    """
+                }
+            }
+        }
         stage('Package') {
             steps {
                 sh 'mvn package -DskipTests'
             }
         }
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t b2u-backend:latest .'
+            }
+        }
+        stage('Docker Run') {
+            steps {
+                sh '''
+                    docker rm -f b2u-backend || true
+                    docker run -d --name b2u-backend --network b2u-network -p 8081:8080 b2u-backend:latest
+                '''
+            }
+        }
     }
     post {
         success {
-            echo 'Build succeeded!'
+            echo '✅ Pipeline succeeded!'
         }
         failure {
-            echo 'Build failed!'
+            echo '❌ Pipeline failed!'
         }
     }
 }
