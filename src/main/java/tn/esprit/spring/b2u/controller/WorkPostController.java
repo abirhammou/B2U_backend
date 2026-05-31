@@ -41,23 +41,16 @@ public class WorkPostController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<?> create(@RequestBody WorkPost post, Principal principal) {
-        User user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        post.setEntrepriseId(resolveEntrepriseId(user));
-        return ResponseEntity.ok(workPostService.create(post));
+    public WorkPost create(@RequestBody WorkPost post, Principal principal) {
+
+        String entrepriseId = principal.getName(); // ou depuis JWT
+        post.setEntrepriseId(entrepriseId);
+        return workPostService.create(post);
     }
 
     @GetMapping("/all")
     public List<WorkPost> getAll() {
         return workPostService.getAll();
-    }
-
-    @GetMapping("/mine")
-    public List<WorkPost> getMine(Principal principal) {
-        User user = userRepository.findByEmail(principal.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return workPostService.getByEntreprise(resolveEntrepriseId(user));
     }
 
     @GetMapping("/entreprise/{id}")
