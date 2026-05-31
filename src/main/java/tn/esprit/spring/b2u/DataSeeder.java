@@ -3,6 +3,7 @@ package tn.esprit.spring.b2u;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import tn.esprit.spring.b2u.entity.*;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Profile("!test")
 public class DataSeeder implements ApplicationRunner {
 
     private final UserRepository userRepo;
