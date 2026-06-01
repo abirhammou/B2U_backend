@@ -3,6 +3,7 @@ package tn.esprit.spring.b2u.entity;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+<<<<<<< Updated upstream
 import jakarta.validation.constraints.*;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -109,3 +110,19 @@ public class Evaluation {
         VALIDATED
     }
 }
+=======
+import java.time.LocalDateTime;
+import java.util.Map;
+
+@Document(collection = "evaluations")
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+public class Evaluation {
+    @Id
+    private String id;
+    private String userId;
+    private int aiScore;
+    private String detailedEvaluation;
+    private Map<String, Integer> categoryScores;
+    private LocalDateTime createdAt;
+}
+>>>>>>> Stashed changes

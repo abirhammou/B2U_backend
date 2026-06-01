@@ -23,7 +23,15 @@ public class JwtFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
+<<<<<<< Updated upstream
         return request.getMethod().equals("OPTIONS");
+=======
+        String method = request.getMethod();
+        String path = request.getServletPath();
+
+        // Don't filter OPTIONS requests or auth endpoints
+        return method.equals("OPTIONS") || path.startsWith("/api/auth") || path.startsWith("/auth");
+>>>>>>> Stashed changes
     }
 
     @Override

@@ -1,5 +1,6 @@
 package tn.esprit.spring.b2u.DTO;
 
+<<<<<<< Updated upstream
 import jakarta.validation.constraints.*;
 import lombok.*;
 import tn.esprit.spring.b2u.entity.Evaluation.EvaluationType;
@@ -68,3 +69,15 @@ public class EvaluationDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+=======
+import lombok.Data;
+import java.util.Map;
+
+@Data
+public class EvaluationDTO {
+    private String userId;
+    private int aiScore;
+    private String detailedEvaluation;
+    private Map<String, Integer> categoryScores;
+}
+>>>>>>> Stashed changes

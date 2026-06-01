@@ -1,5 +1,6 @@
 package tn.esprit.spring.b2u.controller;
 
+<<<<<<< Updated upstream
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -13,16 +14,27 @@ import tn.esprit.spring.b2u.service.IEvaluationService;
 
 import java.util.List;
 import java.util.Map;
+=======
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import tn.esprit.spring.b2u.entity.Evaluation;
+import tn.esprit.spring.b2u.service.evaluation.IEvaluationService;
+>>>>>>> Stashed changes
 
 @RestController
 @RequestMapping("/api/evaluations")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "http://localhost:4200")
+<<<<<<< Updated upstream
 @Tag(name = "Evaluation", description = "AI Scoring & Evaluation management")
+=======
+>>>>>>> Stashed changes
 public class EvaluationController {
 
     private final IEvaluationService evaluationService;
 
+<<<<<<< Updated upstream
     // ── CREATE ──
     @PostMapping
     @Operation(summary = "Create a new evaluation")
@@ -126,3 +138,17 @@ public class EvaluationController {
         return ResponseEntity.ok(evaluationService.getStudentStatistics(idEtudiant));
     }
 }
+=======
+    @PostMapping("/generate/{userId}")
+    public ResponseEntity<Evaluation> generate(@PathVariable String userId) {
+        return ResponseEntity.ok(evaluationService.generateEvaluation(userId));
+    }
+
+    @GetMapping("/latest/{userId}")
+    public ResponseEntity<Evaluation> getLatest(@PathVariable String userId) {
+        return evaluationService.getLatestEvaluation(userId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+}
+>>>>>>> Stashed changes

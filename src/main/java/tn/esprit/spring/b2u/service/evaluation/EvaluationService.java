@@ -1,6 +1,7 @@
 package tn.esprit.spring.b2u.service;
 
 import lombok.RequiredArgsConstructor;
+<<<<<<< Updated upstream
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import tn.esprit.spring.b2u.DTO.EvaluationDTO;
@@ -361,3 +362,47 @@ public class EvaluationService implements IEvaluationService {
                 .build();
     }
 }
+=======
+import org.springframework.stereotype.Service;
+import tn.esprit.spring.b2u.entity.Evaluation;
+import tn.esprit.spring.b2u.entity.StudentProfile;
+import tn.esprit.spring.b2u.repository.EvaluationRepo;
+import tn.esprit.spring.b2u.repository.StudentProfileRepo;
+import tn.esprit.spring.b2u.service.AiAssistantService;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+
+@Service
+@RequiredArgsConstructor
+public class EvaluationService implements IEvaluationService {
+
+    private final EvaluationRepo evaluationRepo;
+    private final StudentProfileRepo profileRepo;
+    private final AiAssistantService aiService;
+
+    @Override
+    public Evaluation generateEvaluation(String userId) {
+        StudentProfile profile = profileRepo.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Profile not found for user: " + userId));
+
+        Map<String, Object> aiResult = aiService.evaluateProfile(profile);
+
+        Evaluation evaluation = Evaluation.builder()
+                .userId(userId)
+                .aiScore((Integer) aiResult.get("aiScore"))
+                .detailedEvaluation((String) aiResult.get("detailedEvaluation"))
+                .categoryScores((Map<String, Integer>) aiResult.get("categoryScores"))
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        return evaluationRepo.save(evaluation);
+    }
+
+    @Override
+    public Optional<Evaluation> getLatestEvaluation(String userId) {
+        return evaluationRepo.findFirstByUserIdOrderByCreatedAtDesc(userId);
+    }
+}
+>>>>>>> Stashed changes

@@ -7,7 +7,11 @@ import tn.esprit.spring.b2u.entity.Evaluation.ScoreRank;
 import java.util.List;
 import java.util.Map;
 
+import tn.esprit.spring.b2u.entity.Evaluation;
+import java.util.Optional;
+
 public interface IEvaluationService {
+<<<<<<< Updated upstream
 
     // ── CRUD ──
     EvaluationDTO createEvaluation(EvaluationDTO dto);
@@ -39,3 +43,8 @@ public interface IEvaluationService {
     List<String> generateStrengths(EvaluationDTO dto);
     List<String> generateImprovements(EvaluationDTO dto);
 }
+=======
+    Evaluation generateEvaluation(String userId);
+    Optional<Evaluation> getLatestEvaluation(String userId);
+}
+>>>>>>> Stashed changes

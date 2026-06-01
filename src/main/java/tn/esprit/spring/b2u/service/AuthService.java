@@ -1,6 +1,14 @@
 package tn.esprit.spring.b2u.service;
 
+<<<<<<< Updated upstream
 import tn.esprit.spring.b2u.entity.User;
+=======
+import tn.esprit.spring.b2u.entity.Etudiant;
+import tn.esprit.spring.b2u.entity.Entreprise;
+import tn.esprit.spring.b2u.entity.User;
+import tn.esprit.spring.b2u.repository.EntrepriseRepo;
+import tn.esprit.spring.b2u.repository.EtudiantRepo;
+>>>>>>> Stashed changes
 import tn.esprit.spring.b2u.repository.UserRepository;
 import tn.esprit.spring.b2u.security.JwtUtil;
 import tn.esprit.spring.b2u.DTO.RegisterRequest;
@@ -15,13 +23,28 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepo;
+<<<<<<< Updated upstream
+=======
+    private final EntrepriseRepo entrepriseRepo;
+    private final EtudiantRepo etudiantRepo;
+>>>>>>> Stashed changes
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
     public AuthService(UserRepository userRepo,
+<<<<<<< Updated upstream
                        PasswordEncoder passwordEncoder,
                        JwtUtil jwtUtil) {
         this.userRepo = userRepo;
+=======
+                       EntrepriseRepo entrepriseRepo,
+                       EtudiantRepo etudiantRepo,
+                       PasswordEncoder passwordEncoder,
+                       JwtUtil jwtUtil) {
+        this.userRepo = userRepo;
+        this.entrepriseRepo = entrepriseRepo;
+        this.etudiantRepo = etudiantRepo;
+>>>>>>> Stashed changes
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
     }
@@ -74,7 +97,25 @@ public class AuthService {
         }
 
 
+<<<<<<< Updated upstream
         userRepo.save(user);
+=======
+        // Auto-create Entreprise for self-registered company users
+        if ("company".equals(roleKey)) {
+            Entreprise enterprise = new Entreprise();
+            enterprise.setName(request.getFirstName() + " " + request.getLastName());
+            enterprise.setEmail(request.getEmail());
+            enterprise.setUserId(user.getId());
+            enterprise = entrepriseRepo.save(enterprise);
+
+            user.setEntrepriseId(enterprise.getId());
+            userRepo.save(user);
+        } else if ("student".equals(roleKey) || "".equals(roleKey)) {
+            Etudiant etudiant = new Etudiant();
+            etudiant.setUserId(user.getId());
+            etudiantRepo.save(etudiant);
+        }
+>>>>>>> Stashed changes
 
         return "Utilisateur créé avec succès";
     }

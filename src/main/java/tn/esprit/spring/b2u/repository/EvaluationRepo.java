@@ -1,6 +1,7 @@
 package tn.esprit.spring.b2u.repository;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
+<<<<<<< Updated upstream
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import tn.esprit.spring.b2u.entity.Evaluation;
@@ -47,3 +48,11 @@ public interface EvaluationRepo extends MongoRepository<Evaluation, String> {
     @Query("{ 'overallScore': { $gte: ?0 } }")
     List<Evaluation> findByOverallScoreGreaterThanEqual(double minScore);
 }
+=======
+import tn.esprit.spring.b2u.entity.Evaluation;
+import java.util.Optional;
+
+public interface EvaluationRepo extends MongoRepository<Evaluation, String> {
+    Optional<Evaluation> findFirstByUserIdOrderByCreatedAtDesc(String userId);
+}
+>>>>>>> Stashed changes
