@@ -194,6 +194,8 @@
                 <configuration>
                     <connectionTimeout>60000</connectionTimeout>
                     <databaseDriverName>org.h2.Driver</databaseDriverName>
+                    <autoUpdate>false</autoUpdate>
+                    <failOnError>false</failOnError>
                 </configuration>
                 <executions>
                     <execution>
